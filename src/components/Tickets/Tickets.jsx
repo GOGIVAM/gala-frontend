@@ -8,12 +8,12 @@ import { QrCode, CreditCard, Phone, Mail, User, BookOpen } from 'lucide-react'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 const FILIERES = [
-  'Génie Informatique',
-  'Génie Civil',
-  'Génie Électrique',
-  'Génie Mécanique',
-  'Génie Industriel',
-  'Génie des Télécommunications',
+  'Sciences des Données et Intellignece Artificielle ',
+  'Mécanique et Matériaux',
+  'Energie',
+  'Electronique Electrotechnique Automatisme et Télécom',
+  'Chimie Industrielle et Bioprocédé Industriel',
+  'Géophysque Eau et Environnement',
   'Autre',
 ]
 
