@@ -1,0 +1,323 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8D5A3;
+    --gold-dark: #A07830;
+    --cream: #FAF8F3;
+    --warm-white: #F5F2EB;
+    --charcoal: #1A1A1A;
+    --charcoal-light: #2D2D2D;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--charcoal);
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--gold-light);
+    color: var(--charcoal);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--cream);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .font-accent {
+    font-family: 'Playfair Display', serif;
+  }
+
+  .gold-text {
+    color: var(--gold);
+  }
+
+  .gold-border {
+    border-color: var(--gold);
+  }
+
+  .btn-primary {
+    @apply bg-charcoal text-cream px-8 py-3 font-body font-light tracking-[0.2em] uppercase text-xs 
+           transition-all duration-500 hover:bg-gold hover:text-charcoal relative overflow-hidden;
+  }
+
+  .btn-gold {
+    @apply border border-gold text-gold px-8 py-3 font-body font-light tracking-[0.2em] uppercase text-xs 
+           transition-all duration-500 hover:bg-gold hover:text-charcoal;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+  }
+
+  .decorative-line {
+    @apply block h-px bg-gold mx-auto;
+  }
+
+  .card-luxury {
+    @apply bg-warm-white border border-gold/20 p-8 transition-all duration-500 hover:border-gold/60 hover:shadow-xl;
+  }
+
+  .gold-circle {
+    border: 1px solid var(--gold-light);
+    border-radius: 50%;
+  }
+
+  .organic-shape {
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  }
+}
+
+/* ===== MARBLE TEXTURE ===== */
+.marble-bg {
+  background-image: 
+    radial-gradient(ellipse at 20% 50%, rgba(201, 168, 76, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(201, 168, 76, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(201, 168, 76, 0.03) 0%, transparent 50%);
+  background-color: var(--cream);
+}
+
+/* ===== GRAIN OVERLAY ===== */
+.grain::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ===== COUNTDOWN ===== */
+.countdown-digit {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 300;
+  line-height: 1;
+  color: var(--charcoal);
+  position: relative;
+}
+
+.countdown-digit::after {
+  content: attr(data-value);
+  position: absolute;
+  top: 0; left: 0;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--gold-light);
+  transform: translate(3px, 3px);
+  z-index: -1;
+}
+
+/* ===== WHEEL PROGRAM ===== */
+.wheel-segment {
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wheel-segment.active {
+  filter: drop-shadow(0 0 20px rgba(201, 168, 76, 0.4));
+}
+
+/* ===== PHOTO GRID ===== */
+.photo-asymmetric {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.photo-frame {
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-frame::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--gold-light);
+  border-radius: inherit;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.photo-center {
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  overflow: hidden;
+}
+
+/* ===== ORGANIC DECORATORS ===== */
+.blob-gold {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  pointer-events: none;
+}
+
+/* ===== FORM STYLES ===== */
+.input-luxury {
+  @apply w-full bg-transparent border-b border-charcoal/20 py-3 px-0 font-body font-light text-sm
+         focus:outline-none focus:border-gold transition-colors duration-300 placeholder:text-charcoal/30;
+}
+
+.select-luxury {
+  @apply w-full bg-transparent border-b border-charcoal/20 py-3 px-0 font-body font-light text-sm
+         focus:outline-none focus:border-gold transition-colors duration-300 appearance-none cursor-pointer;
+}
+
+/* ===== TIMELINE ===== */
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--gold);
+  border-radius: 50%;
+  position: relative;
+}
+
+.timeline-dot::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 1px solid var(--gold-light);
+  border-radius: 50%;
+}
+
+/* ===== QR CODE OVERLAY ===== */
+.qr-glow {
+  box-shadow: 0 0 40px rgba(201, 168, 76, 0.2);
+}
+
+/* ===== NAVIGATION ===== */
+.nav-link {
+  @apply font-body font-light tracking-[0.15em] uppercase text-xs text-charcoal/70
+         hover:text-gold transition-colors duration-300 relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* ===== AWARD CARDS ===== */
+.award-card {
+  @apply relative overflow-hidden cursor-pointer;
+  background: var(--warm-white);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  transition: all 0.5s ease;
+}
+
+.award-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px var(--gold-light);
+}
+
+.award-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.05), transparent);
+  transition: left 0.6s ease;
+}
+
+.award-card:hover::before {
+  left: 100%;
+}
+
+/* ===== SCROLL ANIMATIONS ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .photo-asymmetric {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .photo-asymmetric .photo-frame:last-child {
+    display: none;
+  }
+
+  .blob-gold {
+    width: 250px;
+    height: 250px;
+  }
+}
