@@ -74,7 +74,7 @@ export default function Awards() {
             La Consécration
           </p>
           <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontWeight: 300, fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', lineHeight: 1.1 }}>
-            Engineer Awards
+            Awards
           </h2>
           <p style={{ fontFamily: 'Jost', fontWeight: 300, fontSize: '13px', color: 'rgba(26,26,26,0.5)', marginTop: '16px', maxWidth: '500px', margin: '16px auto 0', lineHeight: 1.8 }}>
             Nominés et élus par la Promotion 2 elle-même. Résultats révélés le soir du 30 Mai.

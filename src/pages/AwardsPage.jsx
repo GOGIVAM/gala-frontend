@@ -93,7 +93,7 @@ export default function AwardsPage() {
             Votes enregistrés !
           </h2>
           <p style={{ fontFamily: 'Jost', fontSize: '13px', color: 'rgba(26,26,26,0.55)', lineHeight: 1.8 }}>
-            Merci d'avoir voté. Les résultats seront révélés lors de la cérémonie des Engineer Awards,<br/>
+            Merci d'avoir voté. Les résultats seront révélés lors de la cérémonie des Awards,<br/>
             le <strong>30 Mai 2026</strong>.
           </p>
           <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C', fontSize: '1.1rem', marginTop: '24px' }}>
@@ -112,7 +112,7 @@ export default function AwardsPage() {
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <p style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.4em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
-            Engineer Awards · Vote
+            Awards · Vote
           </p>
           <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300 }}>
             Votez pour vos Camarades

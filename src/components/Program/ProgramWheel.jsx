@@ -38,7 +38,7 @@ const PROGRAM = [
   {
     id: 3,
     time: '22h00',
-    title: 'Engineer Awards',
+    title: 'Awards',
     subtitle: 'La Consécration',
     description:
       'Point culminant de la soirée. Les lauréats sont révélés dans une mise en scène soignée. Catégories sérieuses et légères pour maintenir l\'énergie à son maximum.',

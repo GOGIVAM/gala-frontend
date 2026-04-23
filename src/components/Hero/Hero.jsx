@@ -37,7 +37,7 @@ function CountdownUnit({ value, label }) {
           data-value={display}
           style={{
             fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 'clamp(2.5rem, 7vw, 6rem)',
+            fontSize: 'clamp(4rem, 9vw, 9rem)',
             fontWeight: 300,
             color: '#1A1A1A',
             letterSpacing: '0.02em',
@@ -49,11 +49,11 @@ function CountdownUnit({ value, label }) {
       <span
         style={{
           fontFamily: 'Jost, sans-serif',
-          fontSize: '9px',
+          fontSize: '11px',
           letterSpacing: '0.3em',
           textTransform: 'uppercase',
           color: '#C9A84C',
-          marginTop: '8px',
+          marginTop: '10px',
           fontWeight: 400,
         }}
       >
@@ -63,28 +63,40 @@ function CountdownUnit({ value, label }) {
   )
 }
 
-// Parallax images config
+// Images à gauche, empilées verticalement, légèrement décalées
 const HERO_IMAGES = [
   {
     src: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80',
-    style: { top: '15%', left: '3%', width: 180, height: 240, borderRadius: '4px' },
+    top: '6%',
+    left: '2%',
+    width: 190,
+    height: 255,
+    borderRadius: '4px',
     delay: 0.3,
-    shape: 'rect',
-    parallax: 0.3,
+    parallax: 0.25,
+    offsetX: '0px',
   },
   {
     src: 'https://images.unsplash.com/photo-1529636798458-92182e662485?w=500&q=80',
-    style: { top: '8%', right: '4%', width: 200, height: 280, borderRadius: '50% 50% 50% 50% / 40% 40% 60% 60%' },
+    top: '34%',
+    left: '6%',
+    width: 210,
+    height: 290,
+    borderRadius: '50% 50% 50% 50% / 40% 40% 60% 60%',
     delay: 0.5,
-    shape: 'oval',
-    parallax: 0.5,
+    parallax: 0.4,
+    offsetX: '20px',
   },
   {
     src: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400&q=80',
-    style: { bottom: '10%', right: '6%', width: 160, height: 210, borderRadius: '4px' },
+    top: '66%',
+    left: '1%',
+    width: 175,
+    height: 235,
+    borderRadius: '4px',
     delay: 0.4,
-    shape: 'rect',
-    parallax: 0.2,
+    parallax: 0.15,
+    offsetX: '8px',
   },
 ]
 
@@ -131,7 +143,6 @@ export default function Hero() {
           transform: `translateY(${-scrollY * 0.08}px)`,
         }}
       />
-      {/* Small accent circle */}
       <div
         className="absolute pointer-events-none"
         style={{
@@ -142,19 +153,24 @@ export default function Hero() {
         }}
       />
 
-      {/* Parallax Photos */}
+      {/* ── Images gauche — empilées, nettes, z-0 ── */}
       {HERO_IMAGES.map((img, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, delay: img.delay, ease: [0.6, 0, 0.2, 1] }}
-          className="absolute hidden lg:block photo-frame"
+          initial={{ opacity: 0, x: -30, scale: 0.95 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: 1.3, delay: img.delay, ease: [0.6, 0, 0.2, 1] }}
+          className="absolute hidden lg:block"
           style={{
-            ...img.style,
-            transform: `translateY(${-scrollY * img.parallax * 0.1}px)`,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+            top: img.top,
+            left: img.left,
+            width: img.width,
+            height: img.height,
+            borderRadius: img.borderRadius,
             overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+            transform: `translateY(${-scrollY * img.parallax * 0.1}px) translateX(${img.offsetX})`,
+            zIndex: 1,
           }}
         >
           <img
@@ -164,22 +180,23 @@ export default function Hero() {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              borderRadius: img.style.borderRadius,
+              borderRadius: img.borderRadius,
             }}
           />
-          {/* Gold overlay */}
+          {/* Voile doré */}
           <div
             style={{
               position: 'absolute', inset: 0,
               background: 'linear-gradient(135deg, rgba(201,168,76,0.1) 0%, transparent 60%)',
-              borderRadius: img.style.borderRadius,
+              borderRadius: img.borderRadius,
             }}
           />
         </motion.div>
       ))}
 
-      {/* Main Content */}
+      {/* ── Main Content — identique, centré, z-10 ── */}
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
+
         {/* Pre-title */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -191,7 +208,7 @@ export default function Hero() {
           <span
             style={{
               fontFamily: 'Jost, sans-serif',
-              fontSize: '10px',
+              fontSize: '13px',
               letterSpacing: '0.4em',
               textTransform: 'uppercase',
               color: '#C9A84C',
@@ -203,16 +220,24 @@ export default function Hero() {
           <div className="decorative-line w-12" />
         </motion.div>
 
-        {/* Main Title */}
+        {/* Éclat */}
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4, ease: [0.6, 0, 0.2, 1] }}
-          className="section-title mb-2"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}
+          className="mb-2"
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontWeight: 300,
+            fontSize: 'clamp(5rem, 12vw, 11rem)',
+            lineHeight: 0.95,
+            letterSpacing: '0.02em',
+          }}
         >
           Éclat
         </motion.h1>
+
+        {/* & */}
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
@@ -220,15 +245,24 @@ export default function Hero() {
           className="flex items-center justify-center gap-6 mb-2"
         >
           <div className="decorative-line w-20" />
-          <span style={{ color: '#C9A84C', fontSize: '1.5rem', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>&amp;</span>
+          <span style={{ color: '#C9A84C', fontSize: '2rem', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>&amp;</span>
           <div className="decorative-line w-20" />
         </motion.div>
+
+        {/* Élégance */}
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.6, ease: [0.6, 0, 0.2, 1] }}
-          className="section-title mb-10"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 300 }}
+          className="mb-10"
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontStyle: 'italic',
+            fontWeight: 300,
+            fontSize: 'clamp(5rem, 12vw, 11rem)',
+            lineHeight: 0.95,
+            letterSpacing: '0.02em',
+          }}
         >
           Élégance
         </motion.h1>
@@ -240,7 +274,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 1 }}
           style={{
             fontFamily: 'Jost, sans-serif',
-            fontSize: '12px',
+            fontSize: '13px',
             letterSpacing: '0.25em',
             textTransform: 'uppercase',
             color: 'rgba(26,26,26,0.5)',
@@ -269,7 +303,7 @@ export default function Hero() {
                 <span
                   style={{
                     fontFamily: 'Cormorant Garamond, serif',
-                    fontSize: 'clamp(2rem, 5vw, 4.5rem)',
+                    fontSize: 'clamp(3rem, 7vw, 7rem)',
                     fontWeight: 300,
                     color: 'rgba(201,168,76,0.4)',
                     marginTop: '-4px',
@@ -312,6 +346,7 @@ export default function Hero() {
         transition={{ delay: 2 }}
         onClick={scrollDown}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-charcoal/30 hover:text-gold transition-colors"
+        style={{ zIndex: 10 }}
       >
         <span style={{ fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', fontFamily: 'Jost, sans-serif' }}>
           Découvrir
