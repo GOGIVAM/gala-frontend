@@ -69,11 +69,32 @@ export default function Recruitment() {
               >
                 <div style={{ fontSize: '3rem', color: '#C9A84C', marginBottom: '16px' }}>✦</div>
                 <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', fontWeight: 300, color: '#FAF8F3', marginBottom: '12px' }}>
-                  Candidature reçue
+                  Candidature reçue !
                 </h3>
-                <p style={{ fontFamily: 'Jost', fontSize: '12px', color: 'rgba(250,248,243,0.4)', lineHeight: 1.7 }}>
-                  Le CO te contactera très prochainement.
+                <p style={{ fontFamily: 'Jost', fontSize: '12px', color: 'rgba(250,248,243,0.4)', lineHeight: 1.7, marginBottom: '24px' }}>
+                  Rejoins le groupe WhatsApp du CO pour rester informé(e).
                 </p>
+                <a
+                  href="https://wa.me/qr/IIPI4K7IVCNNC1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-block',
+                    padding: '12px 32px',
+                    background: '#25D366',
+                    color: '#fff',
+                    border: 'none',
+                    fontFamily: 'Jost, sans-serif',
+                    fontSize: '10px',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    borderRadius: '4px',
+                  }}
+                >
+                  📲 Rejoindre WhatsApp
+                </a>
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

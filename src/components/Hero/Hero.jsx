@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
+import { useSettings, useHeroMedia } from '../../hooks/useConfig.jsx'
 
-const TARGET_DATE = new Date('2026-05-30T19:00:00')
-
-function useCountdown() {
+function useCountdown(targetDateString) {
   const [time, setTime] = useState({})
+  const TARGET_DATE = targetDateString ? new Date(targetDateString) : new Date('2026-05-30T19:00:00')
 
   useEffect(() => {
     const calc = () => {
@@ -139,42 +139,29 @@ const SHAPES = {
   },
 }
 
-const HERO_IMAGES = [
-  // ── Gauche ──
-  {
-    src: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80',
-    side: 'left',
-    top: '20%', left: '2%',
-    shape: 'moon',
-    delay: 0.3, parallax: 0.2,
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=500&q=80',
-
-    side: 'left',
-    top: '70%', left: '5%',
-    shape: 'egg',
-    delay: 0.5, parallax: 0.35,
-  },
-  // ── Droite ──
-  {
-    src: 'https://images.unsplash.com/photo-1529636798458-92182e662485?w=500&q=80',
-    side: 'right',
-    top: '15%', right: '3%',
-    shape: 'star',
-    delay: 0.4, parallax: 0.25,
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1493225457124-e3c3ccc3a5ae?w=500&q=80',
-    side: 'right',
-    top: '52%', right: '2%',
-    shape: 'star6',
-    delay: 0.6, parallax: 0.15,
-  },
+// Positions par défaut pour les images
+const DEFAULT_POSITIONS = [
+  { top: '20%', left: '2%', delay: 0.3, parallax: 0.2 },
+  { top: '70%', left: '5%', delay: 0.5, parallax: 0.35 },
+  { top: '15%', right: '3%', delay: 0.4, parallax: 0.25 },
+  { top: '52%', right: '2%', delay: 0.6, parallax: 0.15 },
 ]
 
 export default function Hero() {
-  const countdown = useCountdown()
+  const { settings } = useSettings()
+  const { images: heroMediaDB } = useHeroMedia()
+  
+  // Mapper les images du CMS avec les positions
+  const HERO_IMAGES = (heroMediaDB && heroMediaDB.length > 0) 
+    ? heroMediaDB.slice(0, 4).map((img, i) => ({
+        src: img.url,
+        side: img.position === 'right' ? 'right' : 'left',
+        shape: img.shape || 'moon',
+        ...DEFAULT_POSITIONS[i],
+      }))
+    : []
+  
+  const countdown = useCountdown(settings?.event_date)
   const sectionRef = useRef(null)
   const [scrollY, setScrollY] = useState(0)
 

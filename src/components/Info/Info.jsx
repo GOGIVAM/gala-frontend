@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, UtensilsCrossed, Shirt, ExternalLink } from 'lucide-react'
+import { useMenu, useSettings } from '../../hooks/useConfig.jsx'
 
 const MENU = [
   { course: 'Entrée', items: ['Velouté de champignons truffe', 'Salade César aux crevettes grillées'], icon: '◇' },
@@ -16,14 +17,33 @@ const DRESSCODE = [
   { rule: 'À éviter', detail: 'Jeans, baskets, tenues décontractées. Le comité d\'organisation se réserve le droit de refuser l\'accès.', required: false },
 ]
 
-const tabs = [
-  { id: 'map', label: 'Lieu', icon: MapPin },
-  { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
-  { id: 'dresscode', label: 'Dress Code', icon: Shirt },
+// Fallback menu par défaut
+const MENU_DEFAULT = [
+  { course: 'Entrée', items: ['Velouté de champignons truffe', 'Salade César aux crevettes grillées'], icon: '◇' },
+  { course: 'Plat Principal', items: ['Filet de bœuf en croûte dorée', 'Suprême de volaille aux herbes', 'Option végétarienne sur demande'], icon: '◈' },
+  { course: 'Dessert', items: ['Fondant au chocolat noir & caramel', 'Coupe de fruits exotiques', 'Café gourmand'], icon: '✦' },
+  { course: 'Boissons', items: ['Eau minérale & pétillante', 'Jus de fruits frais', 'Boissons soft incluses'], icon: '◉' },
 ]
 
 export default function Info() {
   const [activeTab, setActiveTab] = useState('map')
+  const { menu } = useMenu()
+  const { settings } = useSettings()
+  
+  // Transformer menu du CMS au format attendu
+  const MENU_CMS = (menu && menu.length > 0) 
+    ? menu.map(m => ({
+        course: m.course,
+        items: m.items || [],
+        icon: '◇'
+      }))
+    : []
+
+  const tabs = [
+    { id: 'map', label: 'Lieu', icon: MapPin },
+    { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
+    { id: 'dresscode', label: 'Dress Code', icon: Shirt },
+  ]
 
   return (
     <section id="informations" className="relative py-32" style={{ background: 'var(--cream)' }}>
@@ -171,7 +191,7 @@ export default function Info() {
                 </p>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {MENU.map((course, i) => (
+                {(MENU_CMS && MENU_CMS.length > 0 ? MENU_CMS : MENU_DEFAULT).map((course, i) => (
                   <motion.div
                     key={course.course}
                     initial={{ opacity: 0, y: 20 }}

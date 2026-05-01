@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import axios from 'axios'
 import { QrCode, CreditCard, Phone, Mail, User, BookOpen } from 'lucide-react'
+import { useSettings } from '../../hooks/useConfig.jsx'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -18,6 +19,7 @@ const FILIERES = [
 ]
 
 export default function Tickets() {
+  const { settings } = useSettings()
   const [step, setStep] = useState('form') // 'form' | 'payment' | 'success'
   const [ticketData, setTicketData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -112,7 +114,7 @@ export default function Tickets() {
           <div className="flex items-center justify-center gap-6 mt-6">
             <div className="h-px bg-gold/40 w-16" />
             <span style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C', fontSize: '1.1rem' }}>
-              10 000 FCFA · Places Limitées
+              {settings?.event_price?.toLocaleString('fr-FR')} FCFA · Places Limitées
             </span>
             <div className="h-px bg-gold/40 w-16" />
           </div>
@@ -284,7 +286,7 @@ export default function Tickets() {
                 </motion.form>
               )}
 
-              {/* STEP 2: PAYMENT */}
+              {/* STEP 2: PAYMENT - Manual with QR Code */}
               {step === 'payment' && (
                 <motion.div
                   key="payment"
@@ -292,7 +294,7 @@ export default function Tickets() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                 >
-                  <div className="mb-8">
+                  <div className="mb-6">
                     <p style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
                       Montant à payer
                     </p>
@@ -301,35 +303,90 @@ export default function Tickets() {
                     </div>
                   </div>
 
-                  {/* Payment Method Toggle */}
-                  <div className="flex gap-4 mb-8">
-                    {[
-                      { id: 'om', label: 'Orange Money', color: '#FF6B00' },
-                      { id: 'momo', label: 'MTN MoMo', color: '#FFCB00' },
-                    ].map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => setPayMethod(m.id)}
-                        style={{
-                          flex: 1, padding: '12px',
-                          border: payMethod === m.id ? `1px solid ${m.color}` : '1px solid rgba(250,248,243,0.1)',
-                          background: payMethod === m.id ? 'rgba(255,255,255,0.04)' : 'transparent',
-                          color: payMethod === m.id ? m.color : 'rgba(250,248,243,0.4)',
-                          fontFamily: 'Jost, sans-serif',
-                          fontSize: '11px',
-                          letterSpacing: '0.1em',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          transition: 'all 0.3s',
-                        }}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
+                  {/* Payment Instructions */}
+                  <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', padding: '24px', marginBottom: '24px' }}>
+                    <p style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '16px' }}>
+                      Instructions de paiement
+                    </p>
+                    <ol style={{ fontFamily: 'Jost', fontSize: '13px', color: 'rgba(250,248,243,0.7)', lineHeight: 1.8, paddingLeft: '16px' }}>
+                      <li style={{ marginBottom: '8px' }}>Effectuez votre paiement de <strong style={{ color: '#C9A84C' }}>10 000 FCAF</strong> vers l'un des numéros ci-dessous</li>
+                      <li style={{ marginBottom: '8px' }}>Envoyez la capture d'écran au <strong style={{ color: '#C9A84C' }}>691 697 924</strong> (Ngouneu Idriss)</li>
+                      <li>Entrez votre référence de transaction ci-dessous et cliquez sur "J'ai payé"</li>
+                    </ol>
                   </div>
 
+                  {/* Payment Numbers */}
+                  <div style={{ marginBottom: '24px' }}>
+                    <p style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
+                      Numéros de paiement
+                    </p>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <div style={{ background: 'rgba(255,107,0,0.1)', border: '1px solid rgba(255,107,0,0.3)', padding: '16px' }}>
+                        <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#FF6B00', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          Orange Money
+                        </p>
+                        <p style={{ fontFamily: 'Jost', fontSize: '18px', color: '#FAF8F3', fontWeight: 500 }}>
+                          658 144 589
+                        </p>
+                        <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.5)' }}>
+                          Ngouneu Idriss
+                        </p>
+                      </div>
+                      <div style={{ background: 'rgba(255,203,0,0.1)', border: '1px solid rgba(255,203,0,0.3)', padding: '16px' }}>
+                        <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#FFCB00', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          MTN Mobile Money
+                        </p>
+                        <p style={{ fontFamily: 'Jost', fontSize: '18px', color: '#FAF8F3', fontWeight: 500 }}>
+                          676 137 255
+                        </p>
+                        <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.5)' }}>
+                          Cathiale Synatha
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transaction Reference Input */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                      Référence de transaction (optionnel)
+                    </label>
+                    <input
+                      id="transactionRef"
+                      type="text"
+                      placeholder="Ex: OM-123456789 ou référence SMS"
+                      style={{
+                        display: 'block', width: '100%',
+                        background: 'transparent',
+                        borderBottom: '1px solid rgba(250,248,243,0.15)',
+                        color: '#FAF8F3',
+                        padding: '12px 0',
+                        fontFamily: 'Jost, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: 300,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  {/* Confirm Payment Button */}
                   <button
-                    onClick={onPayment}
+                    onClick={async () => {
+                      const ref = document.getElementById('transactionRef')?.value
+                      setLoading(true)
+                      try {
+                        await axios.post(`${API}/api/tickets/manual-payment`, { 
+                          ticketId: ticketData.ticketId,
+                          transactionRef: ref 
+                        })
+                        toast.success('Paiement déclaré ! Envoyez la capture au 691697924')
+                        setStep('success')
+                      } catch (err) {
+                        toast.error(err.response?.data?.message || 'Erreur. Réessayez.')
+                      } finally {
+                        setLoading(false)
+                      }
+                    }}
                     disabled={loading}
                     style={{
                       width: '100%', padding: '16px',
@@ -341,34 +398,16 @@ export default function Tickets() {
                       letterSpacing: '0.3em',
                       textTransform: 'uppercase',
                       fontWeight: 500,
-                      cursor: 'pointer',
-                      marginBottom: '16px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.7 : 1,
                     }}
                   >
-                    {loading ? 'En attente de confirmation...' : 'Payer via ' + (payMethod === 'om' ? 'Orange Money' : 'MTN MoMo')}
+                    {loading ? 'Traitement...' : "J'ai payé"}
                   </button>
 
-                  <div style={{ textAlign: 'center', marginTop: '24px' }}>
-                    <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.3)', marginBottom: '12px' }}>
-                      — ou paiement manuel —
-                    </p>
-                    <button
-                      onClick={onManualPayment}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid rgba(201,168,76,0.3)',
-                        color: '#C9A84C',
-                        padding: '10px 24px',
-                        fontFamily: 'Jost, sans-serif',
-                        fontSize: '10px',
-                        letterSpacing: '0.2em',
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      J'ai déjà payé manuellement
-                    </button>
-                  </div>
+                  <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.4)', textAlign: 'center', marginTop: '16px' }}>
+                    Date limite: 20 Mai 2026
+                  </p>
                 </motion.div>
               )}
 
@@ -396,11 +435,12 @@ export default function Tickets() {
                     ✦
                   </motion.div>
                   <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2.5rem', fontWeight: 300, color: '#FAF8F3', marginBottom: '12px' }}>
-                    Réservation Confirmée
+                    Paiement Déclaré
                   </h3>
                   <p style={{ fontFamily: 'Jost', fontSize: '13px', color: 'rgba(250,248,243,0.5)', lineHeight: 1.7, marginBottom: '24px' }}>
-                    Votre billet PDF a été envoyé à votre email.<br />
-                    Présentez le QR Code à l'entrée le 30 mai.
+                    Votre déclaration a été enregistrée.<br />
+                    <strong style={{ color: '#C9A84C' }}>Envoyez la capture d'écran au 691 697 924</strong> pour valider votre billet.<br />
+                    Le QR Code vous sera envoyé par email après validation.
                   </p>
                   <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C', fontSize: '1.1rem' }}>
                     À bientôt, Ingénieur(e).
@@ -454,29 +494,19 @@ export default function Tickets() {
               </div>
             </div>
 
-            {/* Manual Payment QR */}
+            {/* Payment Info */}
             <div style={{ border: '1px solid rgba(201,168,76,0.2)', padding: '24px' }}>
               <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '16px' }}>
-                Paiement Manuel
+                Comment payer
               </p>
-              <div className="flex gap-6 items-center">
-                <div
-                  style={{
-                    width: 80, height: 80,
-                    background: 'rgba(201,168,76,0.1)',
-                    border: '1px solid rgba(201,168,76,0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <QrCode size={40} color="#C9A84C" />
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'Jost', fontSize: '12px', color: 'rgba(250,248,243,0.6)', lineHeight: 1.7 }}>
-                    Scannez le QR code ou contactez<br />
-                    <span style={{ color: '#C9A84C' }}>+237 6XX XXX XXX</span> sur WhatsApp
-                  </p>
-                </div>
+              <div style={{ fontFamily: 'Jost', fontSize: '12px', color: 'rgba(250,248,243,0.6)', lineHeight: 1.8 }}>
+                <p style={{ marginBottom: '12px' }}>
+                  Après inscription, vous verrez les numéros de paiement.<br />
+                  Envoyez votre capture au <strong style={{ color: '#C9A84C' }}>691 697 924</strong>
+                </p>
+                <p style={{ fontSize: '11px', color: 'rgba(250,248,243,0.4)' }}>
+                  Date limite: 20 Mai 2026
+                </p>
               </div>
             </div>
           </div>

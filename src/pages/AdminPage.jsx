@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import { LogOut, Download, Check, Search, Users, TrendingUp, DollarSign, UserCheck } from 'lucide-react'
+import { LogOut, Download, Check, Search, Users, TrendingUp, DollarSign, UserCheck, Settings, Plus, Trash2, Edit2 } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -15,6 +15,21 @@ export default function AdminPage() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [loading, setLoading] = useState(false)
+  
+  // CMS State
+  const [cmsTab, setCmsTab] = useState('settings')
+  const [settings, setSettings] = useState({})
+  const [programme, setProgramme] = useState([])
+  const [menu, setMenu] = useState([])
+  const [editingItem, setEditingItem] = useState(null)
+  const [newItem, setNewItem] = useState({})
+
+  // Platform & Partials State
+  const [platform, setPlatform] = useState(null)
+  const [partials, setPartials] = useState(null)
+  const [selectedParticipant, setSelectedParticipant] = useState(null)
+  const [partialForm, setPartialForm] = useState({ amount: '', transactionRef: '', notes: '' })
+  const [manualPaymentForm, setManualPaymentForm] = useState({ participantId: '', transactionRef: '', amount: '', notes: '' })
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
 
@@ -22,8 +37,26 @@ export default function AdminPage() {
     if (token) {
       fetchStats()
       fetchParticipants()
+      fetchCMS()
     }
   }, [token])
+
+  const fetchCMS = async () => {
+    try {
+      const [settingsRes, programmeRes, menuRes, platformRes] = await Promise.all([
+        axios.get(`${API}/api/admin/cms/settings`, authHeaders),
+        axios.get(`${API}/api/admin/cms/programme`, authHeaders),
+        axios.get(`${API}/api/admin/cms/menu`, authHeaders),
+        axios.get(`${API}/api/config/platform`, authHeaders),
+      ])
+      setSettings(settingsRes.data)
+      setProgramme(programmeRes.data)
+      setMenu(menuRes.data)
+      setPlatform(platformRes.data)
+    } catch {
+      console.log('CMS fetch error')
+    }
+  }
 
   const fetchStats = async () => {
     try {
@@ -79,14 +112,115 @@ export default function AdminPage() {
     }
   }
 
-  const validatePayment = async (id) => {
+  const handleAddProgramme = async (e) => {
+    e.preventDefault()
     try {
-      await axios.patch(`${API}/api/admin/participants/${id}/validate`, {}, authHeaders)
-      toast.success('Paiement validé, billet envoyé !')
-      fetchParticipants()
-      fetchStats()
+      await axios.post(`${API}/api/admin/cms/programme`, newItem, authHeaders)
+      toast.success('Étape ajoutée !')
+      setNewItem({})
+      fetchCMS()
     } catch {
-      toast.error('Erreur validation')
+      toast.error('Erreur création étape')
+    }
+  }
+
+  const handleAddMenu = async (e) => {
+    e.preventDefault()
+    try {
+      await axios.post(`${API}/api/admin/cms/menu`, newItem, authHeaders)
+      toast.success('Plat ajouté !')
+      setNewItem({})
+      fetchCMS()
+    } catch {
+      toast.error('Erreur création plat')
+    }
+  }
+
+  const handleUpdateSetting = async (key, value) => {
+    try {
+      await axios.patch(`${API}/api/admin/cms/settings`, { [key]: value }, authHeaders)
+      toast.success('Paramètre mis à jour')
+      fetchCMS()
+    } catch {
+      toast.error('Erreur mise à jour')
+    }
+  }
+
+  const validatePayment = async (participantId) => {
+    try {
+      await axios.patch(`${API}/api/admin/participants/${participantId}/validate`, {}, authHeaders)
+      toast.success('Paiement validé, billet envoyé !')
+      fetchStats()
+      fetchParticipants()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur validation')
+    }
+  }
+
+  // ── Paiements Partiels ──
+  const loadPartials = async (participantId) => {
+    try {
+      const res = await axios.get(`${API}/api/admin/participants/${participantId}/partials`, authHeaders)
+      setSelectedParticipant(participantId)
+      setPartials(res.data)
+    } catch {
+      toast.error('Erreur chargement paiements')
+    }
+  }
+
+  const handleAddPartial = async (e) => {
+    e.preventDefault()
+    if (!partialForm.amount || !selectedParticipant) return
+    try {
+      const res = await axios.post(
+        `${API}/api/admin/participants/${selectedParticipant}/partial`,
+        {
+          amount: parseInt(partialForm.amount),
+          transactionRef: partialForm.transactionRef,
+          notes: partialForm.notes
+        },
+        authHeaders
+      )
+      toast.success(res.data.message)
+      setPartialForm({ amount: '', transactionRef: '', notes: '' })
+      loadPartials(selectedParticipant)
+      fetchStats()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur ajout paiement')
+    }
+  }
+
+  const handleConfirmByTransaction = async (e) => {
+    e.preventDefault()
+    if (!manualPaymentForm.participantId || !manualPaymentForm.transactionRef) return
+    try {
+      const res = await axios.post(
+        `${API}/api/admin/participants/${manualPaymentForm.participantId}/confirm-by-transaction`,
+        {
+          transactionRef: manualPaymentForm.transactionRef,
+          amount: manualPaymentForm.amount ? parseInt(manualPaymentForm.amount) : undefined,
+          notes: manualPaymentForm.notes
+        },
+        authHeaders
+      )
+      toast.success(res.data.message)
+      setManualPaymentForm({ participantId: '', transactionRef: '', amount: '', notes: '' })
+      fetchStats()
+      fetchParticipants()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur confirmation')
+    }
+  }
+
+  const handleUpdatePlatform = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await axios.patch(`${API}/api/admin/cms/platform-info`, platform, authHeaders)
+      toast.success(res.data.message)
+      setPlatform(res.data.platform)
+      fetchCMS()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur mise à jour')
     }
   }
 
@@ -160,7 +294,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ background: '#1A1A1A', borderBottom: '1px solid rgba(201,168,76,0.1)', padding: '0 32px', display: 'flex', gap: '32px' }}>
-        {['dashboard', 'participants', 'awards'].map(t => (
+        {['dashboard', 'participants', 'cms'].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding: '14px 0', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', background: 'none', border: 'none', borderBottom: tab === t ? '1px solid #C9A84C' : '1px solid transparent', color: tab === t ? '#C9A84C' : 'rgba(250,248,243,0.3)', cursor: 'pointer', transition: 'all 0.3s' }}>
             {t}
           </button>
@@ -316,6 +450,154 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* CMS TAB */}
+        {tab === 'cms' && (
+          <div>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid rgba(201,168,76,0.1)', paddingBottom: '16px' }}>
+              {['settings', 'programme', 'menu'].map(ct => (
+                <button
+                  key={ct}
+                  onClick={() => setCmsTab(ct)}
+                  style={{
+                    fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase',
+                    background: cmsTab === ct ? 'rgba(201,168,76,0.15)' : 'transparent',
+                    border: cmsTab === ct ? '1px solid #C9A84C' : '1px solid transparent',
+                    color: cmsTab === ct ? '#C9A84C' : 'rgba(250,248,243,0.4)',
+                    padding: '8px 16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                  }}
+                >
+                  {ct}
+                </button>
+              ))}
+            </div>
+
+            {cmsTab === 'settings' && settings && (
+              <div>
+                <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.4)', marginBottom: '16px' }}>
+                  ⚙️ Gère les paramètres généraux de l'événement
+                </p>
+              </div>
+            )}
+
+            {cmsTab === 'programme' && (
+              <div>
+                {/* Formulaire Ajout */}
+                {newItem.time_label !== undefined && (
+                  <form onSubmit={handleAddProgramme} style={{ background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', padding: '24px', marginBottom: '24px' }}>
+                    <h4 style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '16px' }}>
+                      Ajouter une étape
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                      <input type="text" placeholder="Heure (ex: 19:30)" value={newItem.time_label || ''} onChange={e => setNewItem({...newItem, time_label: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
+                      <input type="text" placeholder="Titre" value={newItem.title || ''} onChange={e => setNewItem({...newItem, title: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
+                      <input type="text" placeholder="Sous-titre" value={newItem.subtitle || ''} onChange={e => setNewItem({...newItem, subtitle: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
+                      <input type="text" placeholder="Icône" value={newItem.icon || ''} onChange={e => setNewItem({...newItem, icon: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
+                    </div>
+                    <textarea placeholder="Description" value={newItem.description || ''} onChange={e => setNewItem({...newItem, description: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px', width: '100%', minHeight: '80px', marginBottom: '16px' }} />
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button type="submit" style={{ background: '#C9A84C', color: '#1A1A1A', border: 'none', padding: '8px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        Ajouter
+                      </button>
+                      <button type="button" onClick={() => setNewItem({})} style={{ background: 'transparent', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C', padding: '8px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Liste */}
+                <button
+                  onClick={() => setNewItem({ time_label: '', title: '', subtitle: '', description: '', icon: '✦' })}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#C9A84C', color: '#1A1A1A', border: 'none', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', marginBottom: '24px' }}
+                >
+                  <Plus size={12} /> Ajouter étape
+                </button>
+                {programme && programme.map(p => (
+                  <div key={p.id} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.1)', padding: '16px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h4 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.1rem', color: '#FAF8F3' }}>
+                        {p.time_label} — {p.title}
+                      </h4>
+                      <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.4)' }}>
+                        {p.subtitle}
+                      </p>
+                    </div>
+                    <button onClick={async () => {
+                      try {
+                        await axios.delete(`${API}/api/admin/cms/programme/${p.id}`, authHeaders)
+                        toast.success('Étape supprimée')
+                        fetchCMS()
+                      } catch {
+                        toast.error('Erreur suppression')
+                      }
+                    }} style={{ background: 'transparent', border: '1px solid rgba(220,53,69,0.3)', color: '#DC3545', padding: '6px 12px', fontFamily: 'Jost', fontSize: '9px', cursor: 'pointer' }}>
+                      <Trash2 size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {cmsTab === 'menu' && (
+              <div>
+                {/* Formulaire Ajout */}
+                {newItem.course !== undefined && (
+                  <form onSubmit={handleAddMenu} style={{ background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', padding: '24px', marginBottom: '24px' }}>
+                    <h4 style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '16px' }}>
+                      Ajouter un plat
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                      <input type="text" placeholder="Cours (Entrée, Plat, Dessert...)" value={newItem.course || ''} onChange={e => setNewItem({...newItem, course: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
+                      <input type="text" placeholder="Nom du plat" value={newItem.item_name || ''} onChange={e => setNewItem({...newItem, item_name: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button type="submit" style={{ background: '#C9A84C', color: '#1A1A1A', border: 'none', padding: '8px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        Ajouter
+                      </button>
+                      <button type="button" onClick={() => setNewItem({})} style={{ background: 'transparent', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C', padding: '8px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Liste */}
+                <button
+                  onClick={() => setNewItem({ course: '', item_name: '' })}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#C9A84C', color: '#1A1A1A', border: 'none', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', marginBottom: '24px' }}
+                >
+                  <Plus size={12} /> Ajouter plat
+                </button>
+                {menu && menu.map(m => (
+                  <div key={m.id} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.1)', padding: '16px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontFamily: 'Jost', fontSize: '9px', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '4px' }}>
+                        {m.course}
+                      </div>
+                      <div style={{ fontFamily: 'Jost', fontSize: '12px', color: '#FAF8F3' }}>
+                        {m.item_name}
+                      </div>
+                    </div>
+                    <button onClick={async () => {
+                      try {
+                        await axios.delete(`${API}/api/admin/cms/menu/${m.id}`, authHeaders)
+                        toast.success('Plat supprimé')
+                        fetchCMS()
+                      } catch {
+                        toast.error('Erreur suppression')
+                      }
+                    }} style={{ background: 'transparent', border: '1px solid rgba(220,53,69,0.3)', color: '#DC3545', padding: '6px 12px', fontFamily: 'Jost', fontSize: '9px', cursor: 'pointer' }}>
+                      <Trash2 size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

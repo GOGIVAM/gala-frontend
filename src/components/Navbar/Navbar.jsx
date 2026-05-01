@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, LogIn, QrCode } from 'lucide-react'
 
 const links = [
   { label: 'Accueil', href: '#hero' },
@@ -14,6 +14,7 @@ const links = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
@@ -71,13 +72,38 @@ export default function Navbar() {
           </div>
 
           {/* CTA + Mobile Toggle */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* Scanner button */}
+            <button
+              onClick={() => navigate('/scanner')}
+              title="Scannner QR Code"
+              className="hidden md:flex items-center gap-2 px-3 py-2 rounded border border-gold/40 text-gold hover:bg-gold/10 transition-all text-[10px]"
+              style={{ fontFamily: 'Jost' }}
+            >
+              <QrCode size={14} />
+              Scanner
+            </button>
+
+            {/* Admin button */}
+            <button
+              onClick={() => navigate('/admin')}
+              title="Admin"
+              className="hidden md:flex items-center gap-2 px-3 py-2 rounded border border-gold/40 text-gold hover:bg-gold/10 transition-all text-[10px]"
+              style={{ fontFamily: 'Jost' }}
+            >
+              <LogIn size={14} />
+              Admin
+            </button>
+
+            {/* Booking button */}
             <button
               onClick={() => handleNav('#billetterie')}
               className="hidden md:block btn-primary text-[10px]"
             >
               Réserver
             </button>
+
+            {/* Mobile menu toggle */}
             <button
               className="md:hidden text-charcoal"
               onClick={() => setMenuOpen(!menuOpen)}
