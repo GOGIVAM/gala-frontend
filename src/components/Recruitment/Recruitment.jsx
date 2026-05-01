@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -11,7 +11,31 @@ const POLES = ['Communication', 'Logistique', 'Billetterie', 'Technique', 'Déco
 export default function Recruitment() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [filieres, setFilieres] = useState([])
   const { register, handleSubmit, formState: { errors } } = useForm()
+
+  // Charger les filieres au montage
+  useEffect(() => {
+    const loadFilieres = async () => {
+      try {
+        const res = await axios.get(`${API}/api/filieres`)
+        setFilieres(res.data)
+      } catch (err) {
+        console.error('Erreur chargement filières:', err)
+        // Fallback: filieres par défaut
+        setFilieres([
+          'Sciences des Données et Intelligence Artificielle',
+          'Mécanique et Matériaux',
+          'Energie',
+          'Electronique Electrotechnique Automatisme et Télécom',
+          'Chimie Industrielle et Bioprocédé Industriel',
+          'Géophysique Eau et Environnement',
+          'Autre',
+        ])
+      }
+    }
+    loadFilieres()
+  }, [])
 
   const onSubmit = async (data) => {
     setLoading(true)
@@ -112,7 +136,10 @@ export default function Recruitment() {
 
                 <div>
                   <label style={darkLabel}>Filière</label>
-                  <input {...register('filiere', { required: true })} placeholder="Votre filière" style={darkInput} />
+                  <select {...register('filiere', { required: true })} style={{ ...darkInput, appearance: 'none', cursor: 'pointer' }}>
+                    <option value="" style={{ background: '#1A1A1A' }}>Sélectionner votre filière</option>
+                    {filieres.map(f => <option key={f} value={f} style={{ background: '#1A1A1A' }}>{f}</option>)}
+                  </select>
                 </div>
 
                 <div>

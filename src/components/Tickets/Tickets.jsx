@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -8,25 +8,39 @@ import { useSettings } from '../../hooks/useConfig.jsx'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-const FILIERES = [
-  'Sciences des Données et Intellignece Artificielle ',
-  'Mécanique et Matériaux',
-  'Energie',
-  'Electronique Electrotechnique Automatisme et Télécom',
-  'Chimie Industrielle et Bioprocédé Industriel',
-  'Géophysque Eau et Environnement',
-  'Autre',
-]
-
 export default function Tickets() {
   const { settings } = useSettings()
   const [step, setStep] = useState('form') // 'form' | 'payment' | 'success'
   const [ticketData, setTicketData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [filieres, setFilieres] = useState([])
   const [payMethod, setPayMethod] = useState('om') // 'om' | 'momo'
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm()
   const phone = watch('telephone')
+
+  // Charger les filieres au montage
+  useEffect(() => {
+    const loadFilieres = async () => {
+      try {
+        const res = await axios.get(`${API}/api/filieres`)
+        setFilieres(res.data)
+      } catch (err) {
+        console.error('Erreur chargement filières:', err)
+        // Fallback: filieres par défaut
+        setFilieres([
+          'Sciences des Données et Intelligence Artificielle',
+          'Mécanique et Matériaux',
+          'Energie',
+          'Electronique Electrotechnique Automatisme et Télécom',
+          'Chimie Industrielle et Bioprocédé Industriel',
+          'Géophysique Eau et Environnement',
+          'Autre',
+        ])
+      }
+    }
+    loadFilieres()
+  }, [])
 
   const onSubmit = async (data) => {
     setLoading(true)
@@ -254,7 +268,7 @@ export default function Tickets() {
                       }}
                     >
                       <option value="" style={{ background: '#1A1A1A' }}>Sélectionner votre filière</option>
-                      {FILIERES.map(f => (
+                      {filieres.map(f => (
                         <option key={f} value={f} style={{ background: '#1A1A1A' }}>{f}</option>
                       ))}
                     </select>
