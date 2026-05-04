@@ -405,43 +405,72 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {participants.map((p, i) => (
-                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(250,248,243,0.04)', background: i % 2 ? 'rgba(250,248,243,0.01)' : 'transparent' }}>
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ fontFamily: 'Jost', fontSize: '13px', color: '#FAF8F3' }}>{p.prenom} {p.nom}</div>
-                        <div style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.3)' }}>{p.email}</div>
-                      </td>
-                      <td style={{ padding: '12px 16px', fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.5)' }}>{p.filiere}</td>
-                      <td style={{ padding: '12px 16px', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C', fontSize: '0.95rem' }}>{p.ticket_id}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase',
-                          padding: '4px 10px',
-                          background: p.payment_status === 'paid' ? 'rgba(76,175,80,0.15)' : p.payment_status === 'manual_pending' ? 'rgba(255,152,0,0.15)' : 'rgba(250,248,243,0.06)',
-                          color: p.payment_status === 'paid' ? '#4CAF50' : p.payment_status === 'manual_pending' ? '#FF9800' : 'rgba(250,248,243,0.4)',
-                          borderRadius: '2px',
-                        }}>
-                          {p.payment_status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 16px', fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.4)' }}>
-                        {p.payment_method || '—'}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.3)' }}>
-                        {p.payment_date ? new Date(p.payment_date).toLocaleDateString('fr-FR') : '—'}
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        {p.payment_status === 'manual_pending' && (
-                          <button
-                            onClick={() => validatePayment(p.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: '1px solid rgba(76,175,80,0.4)', color: '#4CAF50', padding: '6px 12px', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}
-                          >
-                            <Check size={10} /> Valider
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {participants.map((p, i) => {
+                    const totalPrice = p.payment_amount || 10000
+                    const paidAmount = p.partial_amount_paid || 0
+                    const isPartial = p.payment_status === 'partial' || (paidAmount > 0 && paidAmount < totalPrice)
+                    const progressPercent = paidAmount > 0 ? Math.round((paidAmount / totalPrice) * 100) : 0
+                    
+                    return (
+                      <tr key={p.id} style={{ borderBottom: '1px solid rgba(250,248,243,0.04)', background: i % 2 ? 'rgba(250,248,243,0.01)' : 'transparent' }}>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ fontFamily: 'Jost', fontSize: '13px', color: '#FAF8F3' }}>{p.prenom} {p.nom}</div>
+                          <div style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.3)' }}>{p.email}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.5)' }}>{p.filiere}</td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C', fontSize: '0.95rem' }}>{p.ticket_id}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ marginBottom: '6px' }}>
+                            <span style={{
+                              fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase',
+                              padding: '4px 10px',
+                              background: p.payment_status === 'paid' ? 'rgba(76,175,80,0.15)' : isPartial ? 'rgba(255,193,7,0.15)' : p.payment_status === 'manual_pending' ? 'rgba(255,152,0,0.15)' : 'rgba(250,248,243,0.06)',
+                              color: p.payment_status === 'paid' ? '#4CAF50' : isPartial ? '#FFC107' : p.payment_status === 'manual_pending' ? '#FF9800' : 'rgba(250,248,243,0.4)',
+                              borderRadius: '2px',
+                            }}>
+                              {isPartial ? 'Partiel' : p.payment_status}
+                            </span>
+                          </div>
+                          {isPartial && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                              <div style={{ flex: 1, height: '3px', background: 'rgba(250,248,243,0.1)', borderRadius: '2px', minWidth: '60px' }}>
+                                <div style={{ width: `${progressPercent}%`, height: '100%', background: '#FFC107', borderRadius: '2px', transition: 'width 0.3s' }} />
+                              </div>
+                              <span style={{ fontFamily: 'Jost', fontSize: '8px', color: '#FFC107', whiteSpace: 'nowrap' }}>
+                                {paidAmount}/{totalPrice}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.4)' }}>
+                          {p.payment_method || '—'}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.3)' }}>
+                          {p.payment_date ? new Date(p.payment_date).toLocaleDateString('fr-FR') : '—'}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {p.payment_status === 'manual_pending' && (
+                              <button
+                                onClick={() => validatePayment(p.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: '1px solid rgba(76,175,80,0.4)', color: '#4CAF50', padding: '4px 8px', fontFamily: 'Jost', fontSize: '8px', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                              >
+                                <Check size={9} /> Valider
+                              </button>
+                            )}
+                            {isPartial && (
+                              <button
+                                onClick={() => loadPartials(p.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: '1px solid rgba(255,193,7,0.4)', color: '#FFC107', padding: '4px 8px', fontFamily: 'Jost', fontSize: '8px', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                              >
+                                <DollarSign size={9} /> Détails
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
               {participants.length === 0 && (

@@ -3,18 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import axios from 'axios'
-import { QrCode, CreditCard, Phone, Mail, User, BookOpen } from 'lucide-react'
+import { QrCode, CreditCard, Phone, Mail, User, BookOpen, AlertCircle } from 'lucide-react'
 import { useSettings } from '../../hooks/useConfig.jsx'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const NOTCHPAY_PUBLIC_KEY = import.meta.env.VITE_NOTCHPAY_PUBLIC_KEY || ''
 
 export default function Tickets() {
   const { settings } = useSettings()
-  const [step, setStep] = useState('form') // 'form' | 'payment' | 'success'
+  const [step, setStep] = useState('form') // 'form' | 'payment' | 'success' | 'partial-payment'
   const [ticketData, setTicketData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [filieres, setFilieres] = useState([])
-  const [payMethod, setPayMethod] = useState('om') // 'om' | 'momo'
+  const [payMethod, setPayMethod] = useState('notchpay') // 'om' | 'momo' | 'notchpay' | 'manual'
+  const [paymentType, setPaymentType] = useState('full') // 'full' | 'partial'
+  const [partialAmount, setPartialAmount] = useState('')
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm()
   const phone = watch('telephone')
@@ -60,25 +63,49 @@ export default function Tickets() {
   const onPayment = async () => {
     setLoading(true)
     try {
-      await axios.post(`${API}/api/tickets/initiate-payment`, {
+      const payload = {
         ticketId: ticketData.ticketId,
         method: payMethod,
         phone: ticketData.telephone,
-      })
-      toast.success('Demande de paiement envoyée ! Validez sur votre mobile.')
-      // Poll for confirmation
-      const poll = setInterval(async () => {
-        const check = await axios.get(`${API}/api/tickets/status/${ticketData.ticketId}`)
-        if (check.data.status === 'paid') {
-          clearInterval(poll)
-          setStep('success')
-          toast.success('Paiement confirmé ! Votre billet a été envoyé par email.')
-          setLoading(false)
-        }
-      }, 3000)
-      setTimeout(() => { clearInterval(poll); setLoading(false) }, 120000)
+        email: ticketData.email,
+        isPartial: paymentType === 'partial',
+        partialAmount: paymentType === 'partial' ? parseInt(partialAmount) : null,
+      }
+
+      const response = await axios.post(`${API}/api/tickets/initiate-payment`, payload)
+
+      // Pour les paiements en ligne avec redirection
+      if (payMethod === 'notchpay' && response.data.redirectUrl) {
+        toast.success('Redirection vers NotchPay...')
+        setTimeout(() => {
+          window.location.href = response.data.redirectUrl
+        }, 1500)
+      } else if (payMethod === 'om' || payMethod === 'momo') {
+        toast.success('Demande de paiement envoyée ! Validez sur votre mobile.')
+        // Poll for confirmation
+        const poll = setInterval(async () => {
+          try {
+            const check = await axios.get(`${API}/api/tickets/status/${ticketData.ticketId}`)
+            if (check.data.status === 'paid' || check.data.status === 'partial') {
+              clearInterval(poll)
+              if (check.data.status === 'partial' && paymentType === 'partial') {
+                toast.success('Paiement partiel confirmé !')
+                setStep('partial-payment')
+              } else {
+                setStep('success')
+                toast.success('Paiement confirmé ! Votre billet a été envoyé par email.')
+              }
+              setLoading(false)
+            }
+          } catch (err) {
+            console.error('Erreur vérification:', err)
+          }
+        }, 3000)
+        setTimeout(() => { clearInterval(poll); setLoading(false) }, 120000)
+      }
     } catch (err) {
-      toast.error('Erreur de paiement. Réessayez.')
+      const msg = err.response?.data?.message || 'Erreur de paiement. Réessayez.'
+      toast.error(msg)
       setLoading(false)
     }
   }
@@ -300,7 +327,7 @@ export default function Tickets() {
                 </motion.form>
               )}
 
-              {/* STEP 2: PAYMENT - Manual with QR Code */}
+              {/* STEP 2: PAYMENT - Online & Partial Payments */}
               {step === 'payment' && (
                 <motion.div
                   key="payment"
@@ -313,93 +340,198 @@ export default function Tickets() {
                       Montant à payer
                     </p>
                     <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '3.5rem', fontWeight: 300, color: '#FAF8F3' }}>
-                      10 000 <span style={{ fontSize: '1.5rem', color: '#C9A84C' }}>FCFA</span>
+                      {paymentType === 'partial' ? (partialAmount || '0') : '10 000'} <span style={{ fontSize: '1.5rem', color: '#C9A84C' }}>FCFA</span>
                     </div>
                   </div>
 
-                  {/* Payment Instructions */}
-                  <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', padding: '24px', marginBottom: '24px' }}>
-                    <p style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '16px' }}>
-                      Instructions de paiement
+                  {/* Payment Type Selection */}
+                  <div style={{ marginBottom: '24px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', padding: '16px' }}>
+                    <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
+                      Type de paiement
                     </p>
-                    <ol style={{ fontFamily: 'Jost', fontSize: '13px', color: 'rgba(250,248,243,0.7)', lineHeight: 1.8, paddingLeft: '16px' }}>
-                      <li style={{ marginBottom: '8px' }}>Effectuez votre paiement de <strong style={{ color: '#C9A84C' }}>10 000 FCAF</strong> vers l'un des numéros ci-dessous</li>
-                      <li style={{ marginBottom: '8px' }}>Envoyez la capture d'écran au <strong style={{ color: '#C9A84C' }}>691 697 924</strong> (Ngouneu Idriss)</li>
-                      <li>Entrez votre référence de transaction ci-dessous et cliquez sur "J'ai payé"</li>
-                    </ol>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <button
+                        onClick={() => { setPaymentType('full'); setPartialAmount('') }}
+                        style={{
+                          padding: '12px',
+                          background: paymentType === 'full' ? '#C9A84C' : 'transparent',
+                          color: paymentType === 'full' ? '#1A1A1A' : '#FAF8F3',
+                          border: `1px solid ${paymentType === 'full' ? '#C9A84C' : 'rgba(201,168,76,0.3)'}`,
+                          fontFamily: 'Jost, sans-serif',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Paiement complet
+                      </button>
+                      <button
+                        onClick={() => setPaymentType('partial')}
+                        style={{
+                          padding: '12px',
+                          background: paymentType === 'partial' ? '#C9A84C' : 'transparent',
+                          color: paymentType === 'partial' ? '#1A1A1A' : '#FAF8F3',
+                          border: `1px solid ${paymentType === 'partial' ? '#C9A84C' : 'rgba(201,168,76,0.3)'}`,
+                          fontFamily: 'Jost, sans-serif',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Paiement par tranche
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Payment Numbers */}
+                  {/* Partial Amount Input */}
+                  {paymentType === 'partial' && (
+                    <div style={{ marginBottom: '24px', background: 'rgba(201,168,76,0.08)', padding: '16px', border: '1px solid rgba(201,168,76,0.2)' }}>
+                      <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                        Montant (minimum 2500 FCFA)
+                      </label>
+                      <input
+                        type="number"
+                        value={partialAmount}
+                        onChange={(e) => setPartialAmount(e.target.value)}
+                        min="2500"
+                        max="10000"
+                        placeholder="Entrez le montant"
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          borderBottom: '1px solid rgba(250,248,243,0.15)',
+                          color: '#FAF8F3',
+                          padding: '12px 0',
+                          fontFamily: 'Jost, sans-serif',
+                          fontSize: '14px',
+                          outline: 'none',
+                        }}
+                      />
+                      <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(201,168,76,0.7)', marginTop: '8px' }}>
+                        Vous pouvez payer en plusieurs tranches jusqu'à atteindre 10 000 FCFA
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Payment Method Selection */}
                   <div style={{ marginBottom: '24px' }}>
                     <p style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
-                      Numéros de paiement
+                      Méthode de paiement
                     </p>
                     <div style={{ display: 'grid', gap: '12px' }}>
-                      <div style={{ background: 'rgba(255,107,0,0.1)', border: '1px solid rgba(255,107,0,0.3)', padding: '16px' }}>
-                        <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#FF6B00', textTransform: 'uppercase', marginBottom: '4px' }}>
-                          Orange Money
-                        </p>
-                        <p style={{ fontFamily: 'Jost', fontSize: '18px', color: '#FAF8F3', fontWeight: 500 }}>
-                          658 144 589
-                        </p>
-                        <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.5)' }}>
-                          Ngouneu Idriss
-                        </p>
-                      </div>
-                      <div style={{ background: 'rgba(255,203,0,0.1)', border: '1px solid rgba(255,203,0,0.3)', padding: '16px' }}>
-                        <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#FFCB00', textTransform: 'uppercase', marginBottom: '4px' }}>
-                          MTN Mobile Money
-                        </p>
-                        <p style={{ fontFamily: 'Jost', fontSize: '18px', color: '#FAF8F3', fontWeight: 500 }}>
-                          676 137 255
-                        </p>
-                        <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.5)' }}>
-                          Cathiale Synatha
-                        </p>
-                      </div>
+                      <button
+                        onClick={() => setPayMethod('notchpay')}
+                        style={{
+                          padding: '16px',
+                          background: payMethod === 'notchpay' ? 'rgba(201,168,76,0.15)' : 'transparent',
+                          border: `2px solid ${payMethod === 'notchpay' ? '#C9A84C' : 'rgba(201,168,76,0.2)'}`,
+                          color: '#FAF8F3',
+                          fontFamily: 'Jost, sans-serif',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                        }}
+                      >
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>💳 NotchPay</div>
+                        <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>Paiement en ligne sécurisé (Carte, Mobile Money)</div>
+                      </button>
+
+                      <button
+                        onClick={() => setPayMethod('om')}
+                        style={{
+                          padding: '16px',
+                          background: payMethod === 'om' ? 'rgba(255,107,0,0.15)' : 'transparent',
+                          border: `2px solid ${payMethod === 'om' ? '#FF6B00' : 'rgba(255,107,0,0.2)'}`,
+                          color: '#FAF8F3',
+                          fontFamily: 'Jost, sans-serif',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                        }}
+                      >
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>📱 Orange Money</div>
+                        <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>658 144 589 - Ngouneu Idriss</div>
+                      </button>
+
+                      <button
+                        onClick={() => setPayMethod('momo')}
+                        style={{
+                          padding: '16px',
+                          background: payMethod === 'momo' ? 'rgba(255,203,0,0.15)' : 'transparent',
+                          border: `2px solid ${payMethod === 'momo' ? '#FFCB00' : 'rgba(255,203,0,0.2)'}`,
+                          color: '#FAF8F3',
+                          fontFamily: 'Jost, sans-serif',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                        }}
+                      >
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>📱 MTN MoMo</div>
+                        <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>676 137 255 - Cathiale Synatha</div>
+                      </button>
+
+                      <button
+                        onClick={() => setPayMethod('manual')}
+                        style={{
+                          padding: '16px',
+                          background: payMethod === 'manual' ? 'rgba(201,168,76,0.15)' : 'transparent',
+                          border: `2px solid ${payMethod === 'manual' ? '#C9A84C' : 'rgba(201,168,76,0.2)'}`,
+                          color: '#FAF8F3',
+                          fontFamily: 'Jost, sans-serif',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                        }}
+                      >
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>📷 Déclaration manuelle</div>
+                        <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>Envoyez la capture au 691 697 924</div>
+                      </button>
                     </div>
                   </div>
 
-                  {/* Transaction Reference Input */}
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
-                      Référence de transaction (optionnel)
-                    </label>
-                    <input
-                      id="transactionRef"
-                      type="text"
-                      placeholder="Ex: OM-123456789 ou référence SMS"
-                      style={{
-                        display: 'block', width: '100%',
-                        background: 'transparent',
-                        borderBottom: '1px solid rgba(250,248,243,0.15)',
-                        color: '#FAF8F3',
-                        padding: '12px 0',
-                        fontFamily: 'Jost, sans-serif',
-                        fontSize: '14px',
-                        fontWeight: 300,
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
+                  {/* Transaction Reference Input for Manual */}
+                  {payMethod === 'manual' && (
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                        Référence de transaction (optionnel)
+                      </label>
+                      <input
+                        id="transactionRef"
+                        type="text"
+                        placeholder="Ex: OM-123456789 ou référence SMS"
+                        style={{
+                          display: 'block', width: '100%',
+                          background: 'transparent',
+                          borderBottom: '1px solid rgba(250,248,243,0.15)',
+                          color: '#FAF8F3',
+                          padding: '12px 0',
+                          fontFamily: 'Jost, sans-serif',
+                          fontSize: '14px',
+                          fontWeight: 300,
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                  )}
 
-                  {/* Confirm Payment Button */}
+                  {/* Payment Button */}
                   <button
-                    onClick={async () => {
-                      const ref = document.getElementById('transactionRef')?.value
-                      setLoading(true)
-                      try {
-                        await axios.post(`${API}/api/tickets/manual-payment`, { 
-                          ticketId: ticketData.ticketId,
-                          transactionRef: ref 
-                        })
-                        toast.success('Paiement déclaré ! Envoyez la capture au 691697924')
-                        setStep('success')
-                      } catch (err) {
-                        toast.error(err.response?.data?.message || 'Erreur. Réessayez.')
-                      } finally {
-                        setLoading(false)
+                    onClick={() => {
+                      if (paymentType === 'partial' && !partialAmount) {
+                        toast.error('Veuillez entrer le montant')
+                        return
                       }
+                      if (paymentType === 'partial' && parseInt(partialAmount) < 2500) {
+                        toast.error('Montant minimum: 2500 FCFA')
+                        return
+                      }
+                      onPayment()
                     }}
                     disabled={loading}
                     style={{
@@ -416,12 +548,75 @@ export default function Tickets() {
                       opacity: loading ? 0.7 : 1,
                     }}
                   >
-                    {loading ? 'Traitement...' : "J'ai payé"}
+                    {loading ? 'Traitement...' : payMethod === 'manual' ? 'Envoyer la déclaration' : 'Procéder au paiement'}
                   </button>
 
                   <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.4)', textAlign: 'center', marginTop: '16px' }}>
                     Date limite: 20 Mai 2026
                   </p>
+                </motion.div>
+              )}
+
+              {/* STEP 2B: PARTIAL PAYMENT SUCCESS */}
+              {step === 'partial-payment' && (
+                <motion.div
+                  key="partial-payment"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', padding: '24px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <AlertCircle size={20} color="#C9A84C" style={{ marginTop: '4px', flexShrink: 0 }} />
+                      <div>
+                        <p style={{ fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                          Paiement partiel enregistré
+                        </p>
+                        <p style={{ fontFamily: 'Jost', fontSize: '12px', color: 'rgba(250,248,243,0.8)' }}>
+                          Vous avez payé une partie du montant. Vous pouvez payer le solde ultérieurement.
+                        </p>
+                      </div>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '4px' }}>
+                      <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.6)', marginBottom: '8px' }}>Solde à payer: <strong style={{ color: '#C9A84C', fontSize: '14px' }}>X XXX FCFA</strong></p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setStep('payment')}
+                    style={{
+                      width: '100%', padding: '16px',
+                      background: 'transparent',
+                      border: '1px solid rgba(201,168,76,0.5)',
+                      color: '#C9A84C',
+                      fontFamily: 'Jost, sans-serif',
+                      fontSize: '11px',
+                      letterSpacing: '0.3em',
+                      textTransform: 'uppercase',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    Payer le solde maintenant
+                  </button>
+
+                  <button
+                    onClick={() => setStep('success')}
+                    style={{
+                      width: '100%', padding: '16px',
+                      background: '#C9A84C',
+                      color: '#1A1A1A',
+                      border: 'none',
+                      fontFamily: 'Jost, sans-serif',
+                      fontSize: '11px',
+                      letterSpacing: '0.3em',
+                      textTransform: 'uppercase',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Continuer
+                  </button>
                 </motion.div>
               )}
 
