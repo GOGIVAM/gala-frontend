@@ -226,6 +226,57 @@ export default function Navbar() {
               </motion.button>
             ))}
 
+            {/* Boutons Scanner et Admin mobiles */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              style={{ display: 'flex', gap: '12px', marginTop: '8px' }}
+            >
+              <button
+                onClick={() => {
+                  setMenuOpen(false)
+                  navigate('/scanner')
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 16px',
+                  background: 'transparent',
+                  border: '1px solid rgba(201,168,76,0.4)',
+                  color: '#C9A84C',
+                  fontFamily: 'Jost, sans-serif',
+                  fontSize: '9px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                <QrCode size={12} />
+                Scanner
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false)
+                  navigate('/admin')
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 16px',
+                  background: 'transparent',
+                  border: '1px solid rgba(201,168,76,0.4)',
+                  color: '#C9A84C',
+                  fontFamily: 'Jost, sans-serif',
+                  fontSize: '9px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                <LogIn size={12} />
+                Admin
+              </button>
+            </motion.div>
+
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

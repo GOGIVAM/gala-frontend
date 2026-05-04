@@ -438,7 +438,7 @@ export default function Tickets() {
                           transition: 'all 0.3s',
                         }}
                       >
-                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>💳 NotchPay</div>
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>NotchPay</div>
                         <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>Paiement en ligne sécurisé (Carte, Mobile Money)</div>
                       </button>
 
@@ -455,7 +455,7 @@ export default function Tickets() {
                           transition: 'all 0.3s',
                         }}
                       >
-                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>📱 Orange Money</div>
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>Orange Money</div>
                         <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>658 144 589 - Ngouneu Idriss</div>
                       </button>
 
@@ -472,7 +472,7 @@ export default function Tickets() {
                           transition: 'all 0.3s',
                         }}
                       >
-                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>📱 MTN MoMo</div>
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>MTN MoMo</div>
                         <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>676 137 255 - Cathiale Synatha</div>
                       </button>
 
@@ -489,7 +489,7 @@ export default function Tickets() {
                           transition: 'all 0.3s',
                         }}
                       >
-                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>📷 Déclaration manuelle</div>
+                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>Déclaration manuelle</div>
                         <div style={{ fontSize: '11px', color: 'rgba(250,248,243,0.6)' }}>Envoyez la capture au 691 697 924</div>
                       </button>
                     </div>
