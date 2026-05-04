@@ -341,17 +341,6 @@ export default function Info() {
               </div>
 
               {/* Reference photos */}
-              <div className="photo-asymmetric mt-16 max-w-3xl mx-auto">
-                {[
-                  'https://images.unsplash.com/photo-1594938298603-c8148c4b4ae4?w=400&q=80',
-                  'https://images.unsplash.com/photo-1519657337289-077653f724ed?w=400&q=80',
-                  'https://images.unsplash.com/photo-1566616213894-2d4e1baee5d8?w=400&q=80',
-                ].map((src, i) => (
-                  <div key={i} className={`photo-frame ${i === 1 ? 'photo-center' : ''}`} style={{ aspectRatio: i === 1 ? '3/4' : '3/4', overflow: 'hidden', borderRadius: i === 1 ? '50% 50% 50% 50% / 40% 40% 60% 60%' : '2px' }}>
-                    <img src={src} alt="Dress code reference" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                ))}
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
