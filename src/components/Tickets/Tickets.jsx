@@ -340,7 +340,7 @@ export default function Tickets() {
                       Montant à payer
                     </p>
                     <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '3.5rem', fontWeight: 300, color: '#FAF8F3' }}>
-                      {paymentType === 'partial' ? (partialAmount || '0') : '10 000'} <span style={{ fontSize: '1.5rem', color: '#C9A84C' }}>FCFA</span>
+                      {paymentType === 'partial' ? (partialAmount || '0') : (settings?.event_price || 10500)?.toLocaleString('fr-FR')} <span style={{ fontSize: '1.5rem', color: '#C9A84C' }}>FCFA</span>
                     </div>
                   </div>
 
@@ -393,14 +393,13 @@ export default function Tickets() {
                   {paymentType === 'partial' && (
                     <div style={{ marginBottom: '24px', background: 'rgba(201,168,76,0.08)', padding: '16px', border: '1px solid rgba(201,168,76,0.2)' }}>
                       <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
-                        Montant (minimum 2500 FCFA)
+                        Montant (minimum 1000 FCFA)
                       </label>
                       <input
                         type="number"
                         value={partialAmount}
                         onChange={(e) => setPartialAmount(e.target.value)}
-                        min="2500"
-                        max="10000"
+                        min="1000"
                         placeholder="Entrez le montant"
                         style={{
                           width: '100%',
@@ -414,7 +413,7 @@ export default function Tickets() {
                         }}
                       />
                       <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(201,168,76,0.7)', marginTop: '8px' }}>
-                        Vous pouvez payer en plusieurs tranches jusqu'à atteindre 10 000 FCFA
+                        Vous pouvez payer en plusieurs tranches. Restant: {partialAmount && parseInt(partialAmount) > 0 ? (settings?.event_price - parseInt(partialAmount)).toLocaleString('fr-FR') : (settings?.event_price || 10500).toLocaleString('fr-FR')} FCFA
                       </p>
                     </div>
                   )}

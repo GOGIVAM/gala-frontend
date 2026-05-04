@@ -30,6 +30,7 @@ export default function AdminPage() {
   const [selectedParticipant, setSelectedParticipant] = useState(null)
   const [partialForm, setPartialForm] = useState({ amount: '', transactionRef: '', notes: '' })
   const [manualPaymentForm, setManualPaymentForm] = useState({ participantId: '', transactionRef: '', amount: '', notes: '' })
+  const [showPartialModal, setShowPartialModal] = useState(false)
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
 
@@ -138,11 +139,14 @@ export default function AdminPage() {
 
   const handleUpdateSetting = async (key, value) => {
     try {
-      await axios.patch(`${API}/api/admin/cms/settings`, { [key]: value }, authHeaders)
+      await axios.patch(`${API}/api/admin/cms/settings`, 
+        { updates: { [key]: value } }, 
+        authHeaders
+      )
       toast.success('Paramètre mis à jour')
       fetchCMS()
-    } catch {
-      toast.error('Erreur mise à jour')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur mise à jour')
     }
   }
 
@@ -367,6 +371,58 @@ export default function AdminPage() {
         {/* PARTICIPANTS TAB */}
         {tab === 'participants' && (
           <div>
+            {/* Ajouter participant manuellement */}
+            <div style={{ background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', padding: '24px', marginBottom: '24px' }}>
+              <button
+                onClick={() => setEditingItem(editingItem === 'new-participant' ? null : 'new-participant')}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#C9A84C', color: '#1A1A1A', border: 'none', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', marginBottom: editingItem === 'new-participant' ? '16px' : '0' }}
+              >
+                <Plus size={12} /> Ajouter un participant
+              </button>
+
+              {editingItem === 'new-participant' && (
+                <form onSubmit={async (e) => {
+                  e.preventDefault()
+                  try {
+                    const res = await axios.post(`${API}/api/admin/participants/create`, newItem, authHeaders)
+                    toast.success('Participant créé !')
+                    setNewItem({})
+                    setEditingItem(null)
+                    fetchParticipants()
+                  } catch (err) {
+                    toast.error(err.response?.data?.message || 'Erreur création')
+                  }
+                }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {[
+                    { key: 'nom', label: 'Nom', type: 'text', required: true },
+                    { key: 'prenom', label: 'Prénom', type: 'text', required: true },
+                    { key: 'email', label: 'Email', type: 'email', required: true },
+                    { key: 'telephone', label: 'Téléphone', type: 'text', required: true },
+                    { key: 'filiere', label: 'Filière', type: 'text', required: true },
+                    { key: 'statut', label: 'Statut', type: 'text', required: false, placeholder: 'etudiant' },
+                  ].map(field => (
+                    <input
+                      key={field.key}
+                      type={field.type}
+                      placeholder={field.label}
+                      value={newItem[field.key] || ''}
+                      onChange={(e) => setNewItem({...newItem, [field.key]: e.target.value})}
+                      required={field.required}
+                      style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                    />
+                  ))}
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
+                    <button type="submit" style={{ background: '#4CAF50', color: 'white', border: 'none', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                      Créer
+                    </button>
+                    <button type="button" onClick={() => { setNewItem({}); setEditingItem(null) }} style={{ background: 'transparent', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
             {/* Filters */}
             <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.15)', padding: '10px 16px', flex: 1 }}>
@@ -406,7 +462,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {participants.map((p, i) => {
-                    const totalPrice = p.payment_amount || 10000
+                    const totalPrice = p.payment_amount || 10500
                     const paidAmount = p.partial_amount_paid || 0
                     const isPartial = p.payment_status === 'partial' || (paidAmount > 0 && paidAmount < totalPrice)
                     const progressPercent = paidAmount > 0 ? Math.round((paidAmount / totalPrice) * 100) : 0
@@ -459,12 +515,20 @@ export default function AdminPage() {
                               </button>
                             )}
                             {isPartial && (
-                              <button
-                                onClick={() => loadPartials(p.id)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: '1px solid rgba(255,193,7,0.4)', color: '#FFC107', padding: '4px 8px', fontFamily: 'Jost', fontSize: '8px', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                              >
-                                <DollarSign size={9} /> Détails
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => { setSelectedParticipant(p.id); loadPartials(p.id) }}
+                                  style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: '1px solid rgba(255,193,7,0.4)', color: '#FFC107', padding: '4px 8px', fontFamily: 'Jost', fontSize: '8px', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                >
+                                  <DollarSign size={9} /> Détails
+                                </button>
+                                <button
+                                  onClick={() => { setSelectedParticipant(p.id); setShowPartialModal(true) }}
+                                  style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: '1px solid rgba(25,118,210,0.4)', color: '#1976D2', padding: '4px 8px', fontFamily: 'Jost', fontSize: '8px', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                >
+                                  <Plus size={9} /> Continuer
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>
@@ -507,9 +571,75 @@ export default function AdminPage() {
 
             {cmsTab === 'settings' && settings && (
               <div>
-                <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.4)', marginBottom: '16px' }}>
-                  ⚙️ Gère les paramètres généraux de l'événement
+                <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.4)', marginBottom: '24px' }}>
+                  Gère les paramètres généraux de l'événement
                 </p>
+                
+                {Object.entries(settings).map(([groupName, items]) => (
+                  <div key={groupName} style={{ marginBottom: '32px' }}>
+                    <h3 style={{ fontFamily: 'Jost', fontSize: '11px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid rgba(201,168,76,0.2)' }}>
+                      {groupName}
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                      {Array.isArray(items) && items.map((setting) => (
+                        <div key={setting.key} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.1)', padding: '16px' }}>
+                          <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                            {setting.label || setting.key}
+                          </label>
+                          
+                          {setting.type === 'boolean' ? (
+                            <select
+                              value={setting.value === 'true' || setting.value === true ? 'true' : 'false'}
+                              onChange={(e) => handleUpdateSetting(setting.key, e.target.value === 'true')}
+                              style={{ width: '100%', background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px', outline: 'none', cursor: 'pointer' }}
+                            >
+                              <option value="true">Activé</option>
+                              <option value="false">Désactivé</option>
+                            </select>
+                          ) : setting.type === 'number' ? (
+                            <input
+                              type="number"
+                              value={setting.value}
+                              onChange={(e) => handleUpdateSetting(setting.key, parseInt(e.target.value))}
+                              style={{ width: '100%', background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px', outline: 'none' }}
+                            />
+                          ) : setting.type === 'date' ? (
+                            <input
+                              type="datetime-local"
+                              value={setting.value ? new Date(setting.value).toISOString().slice(0, 16) : ''}
+                              onChange={(e) => handleUpdateSetting(setting.key, new Date(e.target.value).toISOString())}
+                              style={{ width: '100%', background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px', outline: 'none' }}
+                            />
+                          ) : setting.type === 'json' ? (
+                            <textarea
+                              value={typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value, null, 2)}
+                              onChange={(e) => {
+                                try {
+                                  const parsed = JSON.parse(e.target.value)
+                                  handleUpdateSetting(setting.key, parsed)
+                                } catch {
+                                  // Invalid JSON - don't update yet
+                                }
+                              }}
+                              style={{ width: '100%', background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'monospace', fontSize: '10px', outline: 'none', minHeight: '100px' }}
+                            />
+                          ) : (
+                            <input
+                              type="text"
+                              value={setting.value}
+                              onChange={(e) => handleUpdateSetting(setting.key, e.target.value)}
+                              style={{ width: '100%', background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px', outline: 'none' }}
+                            />
+                          )}
+                          
+                          <p style={{ fontFamily: 'Jost', fontSize: '8px', color: 'rgba(250,248,243,0.3)', marginTop: '6px' }}>
+                            Type: {setting.type}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -630,6 +760,125 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Modal — Continuer paiement partiel */}
+      {showPartialModal && selectedParticipant && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            style={{ background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', padding: '32px', maxWidth: '500px', borderRadius: '4px' }}
+          >
+            <h3 style={{ fontFamily: 'Jost', fontSize: '12px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '20px' }}>
+              Continuer le paiement partiel
+            </h3>
+
+            {partials && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.1)', padding: '16px', marginBottom: '16px' }}>
+                  <p style={{ fontFamily: 'Jost', fontSize: '9px', color: 'rgba(250,248,243,0.4)', textTransform: 'uppercase', marginBottom: '8px' }}>Statut du paiement</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span style={{ fontFamily: 'Jost', fontSize: '11px', color: '#FAF8F3' }}>Montant total</span>
+                    <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.1rem', color: '#C9A84C' }}>
+                      {partials.totalAmount.toLocaleString()} XAF
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span style={{ fontFamily: 'Jost', fontSize: '11px', color: '#FAF8F3' }}>Déjà payé</span>
+                    <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.1rem', color: '#4CAF50' }}>
+                      {partials.paidAmount.toLocaleString()} XAF
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: 'Jost', fontSize: '11px', color: '#FAF8F3' }}>Restant</span>
+                    <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.1rem', color: '#FF9800' }}>
+                      {partials.remaining.toLocaleString()} XAF
+                    </span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddPartial} style={{ display: 'grid', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      Montant à ajouter (XAF)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={partials.remaining}
+                      value={partialForm.amount}
+                      onChange={(e) => setPartialForm({...partialForm, amount: e.target.value})}
+                      placeholder={`Max: ${partials.remaining}`}
+                      style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      Référence transaction
+                    </label>
+                    <input
+                      type="text"
+                      value={partialForm.transactionRef}
+                      onChange={(e) => setPartialForm({...partialForm, transactionRef: e.target.value})}
+                      placeholder="NOTCHPAY_XXX ou numéro Orange/MTN"
+                      style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      Notes
+                    </label>
+                    <textarea
+                      value={partialForm.notes}
+                      onChange={(e) => setPartialForm({...partialForm, notes: e.target.value})}
+                      placeholder="Notes optionnelles"
+                      style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '10px', minHeight: '60px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                    <button
+                      type="submit"
+                      style={{ flex: 1, background: '#1976D2', color: 'white', border: 'none', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}
+                    >
+                      Ajouter ce paiement
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowPartialModal(false); setPartialForm({ amount: '', transactionRef: '', notes: '' }) }}
+                      style={{ flex: 1, background: 'transparent', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}
+                    >
+                      Fermer
+                    </button>
+                  </div>
+                </form>
+
+                {partials.transactions && partials.transactions.length > 0 && (
+                  <div style={{ marginTop: '20px', borderTop: '1px solid rgba(201,168,76,0.2)', paddingTop: '20px' }}>
+                    <p style={{ fontFamily: 'Jost', fontSize: '9px', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
+                      Historique des paiements
+                    </p>
+                    {partials.transactions.map((t, i) => (
+                      <div key={i} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.1)', padding: '12px', marginBottom: '8px', fontSize: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                          <span style={{ color: '#FAF8F3' }}>{t.amount.toLocaleString()} XAF</span>
+                          <span style={{ color: '#C9A84C' }}>{new Date(t.addedAt).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                        {t.transactionRef && (
+                          <div style={{ color: 'rgba(250,248,243,0.4)', fontSize: '9px' }}>
+                            Ref: {t.transactionRef}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }
