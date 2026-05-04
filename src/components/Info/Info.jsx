@@ -1,43 +1,66 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, UtensilsCrossed, Shirt, ExternalLink } from 'lucide-react'
-import { useMenu, useSettings } from '../../hooks/useConfig.jsx'
+import axios from 'axios'
+import { useSettings } from '../../hooks/useConfig.jsx'
 
-const MENU = [
-  { course: 'Entrée', items: ['Velouté de champignons truffe', 'Salade César aux crevettes grillées'], icon: '◇' },
-  { course: 'Plat Principal', items: ['Filet de bœuf en croûte dorée', 'Suprême de volaille aux herbes', 'Option végétarienne sur demande'], icon: '◈' },
-  { course: 'Dessert', items: ['Fondant au chocolat noir & caramel', 'Coupe de fruits exotiques', 'Café gourmand'], icon: '✦' },
-  { course: 'Boissons', items: ['Eau minérale & pétillante', 'Jus de fruits frais', 'Boissons soft incluses'], icon: '◉' },
-]
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-const DRESSCODE = [
+// Fallback pour dress code si l'API ne répond pas
+const DRESSCODE_DEFAULT = [
   { rule: 'Messieurs', detail: 'Costume sombre, de préférence noir. Chemise blanche ou crème. Nœud papillon ou cravate dorée.', required: true },
   { rule: 'Mesdames', detail: 'Robe de soirée ou ensemble élégant. Couleurs : noir, blanc, champagne, or. Talons ou chaussures habillées.', required: true },
   { rule: 'Accessoires', detail: 'Bijoux en or ou doré encouragés. Pochette ou clutch de soirée.', required: false },
   { rule: 'À éviter', detail: 'Jeans, baskets, tenues décontractées. Le comité d\'organisation se réserve le droit de refuser l\'accès.', required: false },
 ]
 
-// Fallback menu par défaut
-const MENU_DEFAULT = [
-  { course: 'Entrée', items: ['Velouté de champignons truffe', 'Salade César aux crevettes grillées'], icon: '◇' },
-  { course: 'Plat Principal', items: ['Filet de bœuf en croûte dorée', 'Suprême de volaille aux herbes', 'Option végétarienne sur demande'], icon: '◈' },
-  { course: 'Dessert', items: ['Fondant au chocolat noir & caramel', 'Coupe de fruits exotiques', 'Café gourmand'], icon: '✦' },
-  { course: 'Boissons', items: ['Eau minérale & pétillante', 'Jus de fruits frais', 'Boissons soft incluses'], icon: '◉' },
-]
-
 export default function Info() {
   const [activeTab, setActiveTab] = useState('map')
-  const { menu } = useMenu()
+  const [menu, setMenu] = useState([])
+  const [dresscode, setDresscode] = useState(DRESSCODE_DEFAULT)
+  const [loading, setLoading] = useState(false)
   const { settings } = useSettings()
-  
-  // Transformer menu du CMS au format attendu
-  const MENU_CMS = (menu && menu.length > 0) 
-    ? menu.map(m => ({
-        course: m.course,
-        items: m.items || [],
-        icon: '◇'
-      }))
-    : []
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // Récupérer le menu et dress code
+        const [menuRes, dressRes] = await Promise.all([
+          axios.get(`${API}/api/admin/cms/menu`).catch(() => ({ data: [] })),
+          axios.get(`${API}/api/admin/cms/settings`).catch(() => ({ data: { dresscode_rules: DRESSCODE_DEFAULT } })),
+        ])
+
+        // Transformer menu
+        const menuData = (menuRes.data && Array.isArray(menuRes.data))
+          ? menuRes.data.reduce((acc, item) => {
+              const existing = acc.find(m => m.course === item.course)
+              if (existing) {
+                existing.items.push(item.item_name)
+              } else {
+                acc.push({ course: item.course, items: [item.item_name], icon: '◇' })
+              }
+              return acc
+            }, [])
+          : []
+        
+        setMenu(menuData)
+
+        // Transformer dress code depuis les settings
+        if (dressRes.data && dressRes.data.dresscode_rules) {
+          setDresscode(JSON.parse(typeof dressRes.data.dresscode_rules === 'string' 
+            ? dressRes.data.dresscode_rules 
+            : JSON.stringify(dressRes.data.dresscode_rules)))
+        }
+      } catch (err) {
+        console.error('Erreur chargement données:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
 
   const tabs = [
     { id: 'map', label: 'Lieu', icon: MapPin },
@@ -191,7 +214,7 @@ export default function Info() {
                 </p>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {(MENU_CMS && MENU_CMS.length > 0 ? MENU_CMS : MENU_DEFAULT).map((course, i) => (
+                {(menu && menu.length > 0 ? menu : []).map((course, i) => (
                   <motion.div
                     key={course.course}
                     initial={{ opacity: 0, y: 20 }}
@@ -253,7 +276,7 @@ export default function Info() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-                {DRESSCODE.map((item, i) => (
+                {dresscode.map((item, i) => (
                   <motion.div
                     key={item.rule}
                     initial={{ opacity: 0, y: 20 }}
