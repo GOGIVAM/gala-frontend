@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, LogIn, QrCode } from 'lucide-react'
 
@@ -34,83 +34,137 @@ export default function Navbar() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1, ease: 'easeOut' }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled
-            ? 'bg-cream/95 backdrop-blur-md border-b border-gold/20 py-3'
-            : 'bg-transparent py-6'
-        }`}
+        style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0,
+          zIndex: 50,
+          transition: 'all 0.5s',
+          background: scrolled ? 'rgba(250,248,243,0.97)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(12px)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(201,168,76,0.2)' : 'none',
+          padding: scrolled ? '12px 0' : '24px 0',
+        }}
       >
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
           {/* Logo */}
-          <motion.div
-            className="flex flex-col items-start"
-            whileHover={{ opacity: 0.8 }}
+          <div
+            onClick={() => handleNav('#hero')}
+            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
           >
-            <span
-              className="font-display text-lg tracking-widest text-charcoal cursor-pointer"
-              style={{ fontStyle: 'italic', lineHeight: 1 }}
-              onClick={() => handleNav('#hero')}
-            >
-              Éclat & Élégance
-            </span>
-            <span className="font-body text-[9px] tracking-[0.3em] uppercase text-gold mt-0.5">
+            {/* SVG monogramme */}
+            <svg width="120" height="36" viewBox="0 0 120 36">
+              <text
+                x="0" y="26"
+                fontFamily="Cormorant Garamond, serif"
+                fontStyle="italic"
+                fontWeight="300"
+                fontSize="22"
+                fill="#1A1A1A"
+                letterSpacing="1"
+              >
+                Éclat &amp; Élégance
+              </text>
+              {/* Trait doré sous le texte */}
+              <line x1="0" y1="32" x2="120" y2="32" stroke="#C9A84C" strokeWidth="0.5" opacity="0.6" />
+            </svg>
+            <span style={{ fontFamily: 'Jost, sans-serif', fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#C9A84C', marginTop: '2px' }}>
               Promo 2 · 2026
             </span>
-          </motion.div>
+          </div>
 
           {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-10">
+          <div className="hidden md:flex" style={{ alignItems: 'center', gap: '40px' }}>
             {links.map((link) => (
               <button
                 key={link.href}
                 onClick={() => handleNav(link.href)}
-                className="nav-link"
+                style={{
+                  fontFamily: 'Jost, sans-serif',
+                  fontSize: '10px',
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(26,26,26,0.55)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'color 0.3s',
+                  padding: '4px 0',
+                  position: 'relative',
+                }}
+                onMouseEnter={e => e.target.style.color = '#C9A84C'}
+                onMouseLeave={e => e.target.style.color = 'rgba(26,26,26,0.55)'}
               >
                 {link.label}
               </button>
             ))}
           </div>
 
-          {/* CTA + Mobile Toggle */}
-          <div className="flex items-center gap-3 md:gap-4">
-            {/* Scanner button */}
+          {/* Actions desktop */}
+          <div className="hidden md:flex" style={{ alignItems: 'center', gap: '12px' }}>
             <button
               onClick={() => navigate('/scanner')}
-              title="Scannner QR Code"
-              className="hidden md:flex items-center gap-2 px-3 py-2 rounded border border-gold/40 text-gold hover:bg-gold/10 transition-all text-[10px]"
-              style={{ fontFamily: 'Jost' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px',
+                background: 'transparent',
+                border: '1px solid rgba(201,168,76,0.4)',
+                color: '#C9A84C',
+                fontFamily: 'Jost, sans-serif',
+                fontSize: '9px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+              }}
             >
-              <QrCode size={14} />
+              <QrCode size={12} />
               Scanner
             </button>
-
-            {/* Admin button */}
             <button
               onClick={() => navigate('/admin')}
-              title="Admin"
-              className="hidden md:flex items-center gap-2 px-3 py-2 rounded border border-gold/40 text-gold hover:bg-gold/10 transition-all text-[10px]"
-              style={{ fontFamily: 'Jost' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px',
+                background: 'transparent',
+                border: '1px solid rgba(201,168,76,0.4)',
+                color: '#C9A84C',
+                fontFamily: 'Jost, sans-serif',
+                fontSize: '9px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
             >
-              <LogIn size={14} />
+              <LogIn size={12} />
               Admin
             </button>
-
-            {/* Booking button */}
             <button
               onClick={() => handleNav('#billetterie')}
-              className="hidden md:block btn-primary text-[10px]"
+              style={{
+                padding: '10px 24px',
+                background: '#1A1A1A',
+                color: '#FAF8F3',
+                border: 'none',
+                fontFamily: 'Jost, sans-serif',
+                fontSize: '9px',
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
             >
               Réserver
             </button>
-
-            {/* Mobile menu toggle */}
-            <button
-              className="md:hidden text-charcoal"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
           </div>
+
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden"
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A' }}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </motion.nav>
 
@@ -121,31 +175,74 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-cream flex flex-col items-center justify-center gap-10 pt-20"
+            style={{
+              position: 'fixed', inset: 0,
+              zIndex: 40,
+              background: '#FAF8F3',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '36px',
+              paddingTop: '80px',
+              overflow: 'hidden',
+            }}
           >
-            {/* Decorative gold circles */}
-            <div className="absolute top-1/4 right-8 w-40 h-40 gold-circle opacity-20" />
-            <div className="absolute bottom-1/4 left-8 w-24 h-24 gold-circle opacity-10" />
+            {/* Décor SVG mobile */}
+            <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+              <circle cx="350" cy="150" r="120" fill="none" stroke="rgba(201,168,76,0.1)" strokeWidth="1" />
+              <circle cx="350" cy="150" r="80" fill="none" stroke="rgba(201,168,76,0.08)" strokeWidth="1" />
+              <circle cx="50" cy="650" r="100" fill="none" stroke="rgba(201,168,76,0.08)" strokeWidth="1" />
+              <line x1="160" y1="0" x2="160" y2="800" stroke="rgba(201,168,76,0.04)" strokeWidth="1" />
+              <line x1="240" y1="0" x2="240" y2="800" stroke="rgba(201,168,76,0.04)" strokeWidth="1" />
+            </svg>
+
+            {/* Monogramme SVG centré */}
+            <svg width="60" height="60" viewBox="0 0 60 60" style={{ marginBottom: '-16px' }}>
+              <polygon points="30,4 56,18 56,42 30,56 4,42 4,18" fill="none" stroke="rgba(201,168,76,0.4)" strokeWidth="0.8" />
+              <polygon points="30,12 48,22 48,38 30,48 12,38 12,22" fill="none" stroke="rgba(201,168,76,0.2)" strokeWidth="0.5" />
+              <text x="30" y="35" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="18" fontStyle="italic" fill="#C9A84C">É</text>
+            </svg>
 
             {links.map((link, i) => (
               <motion.button
                 key={link.href}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.08 }}
                 onClick={() => handleNav(link.href)}
-                className="font-display text-3xl font-light text-charcoal hover:text-gold transition-colors"
-                style={{ fontStyle: 'italic' }}
+                style={{
+                  fontFamily: 'Cormorant Garamond, serif',
+                  fontStyle: 'italic',
+                  fontSize: '2rem',
+                  fontWeight: 300,
+                  color: '#1A1A1A',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               >
                 {link.label}
               </motion.button>
             ))}
+
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: 0.5 }}
               onClick={() => handleNav('#billetterie')}
-              className="btn-primary mt-4"
+              style={{
+                marginTop: '8px',
+                padding: '14px 40px',
+                background: '#1A1A1A',
+                color: '#FAF8F3',
+                border: 'none',
+                fontFamily: 'Jost, sans-serif',
+                fontSize: '10px',
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
             >
               Réserver ma place
             </motion.button>

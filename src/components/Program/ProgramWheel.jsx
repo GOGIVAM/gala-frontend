@@ -79,9 +79,9 @@ export default function ProgramWheel() {
   const { programme, loading } = useProgramme()
   const [active, setActive] = useState(0)
   const sectionRef = useRef(null)
-  const lastScrollY = useRef(0)
   const scrollLock = useRef(false)
   const accDelta = useRef(0)
+  const inViewRef = useRef(false)
 
   const PROGRAM = (programme && programme.length > 0)
     ? programme.map((p, idx) => ({
@@ -100,44 +100,55 @@ export default function ProgramWheel() {
     const section = sectionRef.current
     if (!section) return
 
-    const onWheel = (e) => {
+    // Déterminer si la section est en vue
+    const checkInView = () => {
       const rect = section.getBoundingClientRect()
-      const inView = rect.top < window.innerHeight * 0.6 && rect.bottom > window.innerHeight * 0.4
+      inViewRef.current = rect.top < window.innerHeight * 0.8 && rect.bottom > window.innerHeight * 0.2
+    }
 
-      if (!inView) return
+    // Événement wheel avec blocage du scroll de page
+    const onWheel = (e) => {
+      checkInView()
+
+      if (!inViewRef.current) return
 
       // Si pas au début ou fin → bloquer le scroll de page et avancer la roue
       const atStart = active === 0 && e.deltaY < 0
       const atEnd = active === PROGRAM.length - 1 && e.deltaY > 0
 
+      // Bloquer le scroll de page si on est dans le programme et pas aux extrémités
       if (!atStart && !atEnd) {
         e.preventDefault()
+        e.stopPropagation()
       }
 
       if (scrollLock.current) return
 
       accDelta.current += e.deltaY
 
-      if (Math.abs(accDelta.current) > 80) {
+      if (Math.abs(accDelta.current) > 60) {
         if (accDelta.current > 0) {
-          setActive((prev) => {
-            const next = Math.min(prev + 1, PROGRAM.length - 1)
-            return next
-          })
+          setActive((prev) => Math.min(prev + 1, PROGRAM.length - 1))
         } else {
-          setActive((prev) => {
-            const next = Math.max(prev - 1, 0)
-            return next
-          })
+          setActive((prev) => Math.max(prev - 1, 0))
         }
         accDelta.current = 0
         scrollLock.current = true
-        setTimeout(() => { scrollLock.current = false }, 500)
+        setTimeout(() => { scrollLock.current = false }, 400)
       }
     }
 
+    // Ajouter des listeners à la section ET au document
     section.addEventListener('wheel', onWheel, { passive: false })
-    return () => section.removeEventListener('wheel', onWheel)
+    
+    // Vérifier si en vue au scroll de page
+    const onPageScroll = () => checkInView()
+    window.addEventListener('scroll', onPageScroll)
+
+    return () => {
+      section.removeEventListener('wheel', onWheel)
+      window.removeEventListener('scroll', onPageScroll)
+    }
   }, [PROGRAM.length, active])
 
   if (loading || PROGRAM.length === 0) {
@@ -205,113 +216,16 @@ export default function ProgramWheel() {
           </div>
         </div>
 
-        {/* Layout principal */}
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+        {/* Layout principal — superposition */}
+        <div className="relative flex items-center justify-center min-h-[600px]">
 
-          {/* GAUCHE — Panneau info */}
-          <div className="w-full lg:flex-1 lg:max-w-xs order-2 lg:order-1">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active}
-                initial={{ opacity: 0, x: -24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 24 }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="text-center lg:text-left"
-              >
-                {/* Heure grande */}
-                <div className="mb-2">
-                  <span style={{
-                    fontFamily: 'Cormorant Garamond, serif',
-                    fontSize: 'clamp(3rem, 7vw, 5rem)',
-                    fontWeight: 300,
-                    color: 'rgba(201,168,76,0.18)',
-                    lineHeight: 1,
-                  }}>
-                    {activeStep.time}
-                  </span>
-                </div>
-
-                {/* Dots navigation */}
-                <div className="flex items-center gap-2 mb-5 justify-center lg:justify-start flex-wrap">
-                  {PROGRAM.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActive(i)}
-                      style={{
-                        width: i === active ? 24 : 6,
-                        height: 2,
-                        background: i === active ? '#C9A84C' : 'rgba(201,168,76,0.25)',
-                        transition: 'all 0.4s ease',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 0,
-                        flexShrink: 0,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: 400, lineHeight: 1.2, marginBottom: '4px' }}>
-                  {activeStep.title}
-                </h3>
-                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: '1rem', color: '#C9A84C', marginBottom: '14px' }}>
-                  {activeStep.subtitle}
-                </p>
-                <p style={{ fontFamily: 'Jost, sans-serif', fontWeight: 300, fontSize: '13px', lineHeight: 1.8, color: 'rgba(26,26,26,0.6)', marginBottom: '24px' }}>
-                  {activeStep.description}
-                </p>
-
-                {/* Compteur + barre */}
-                <div className="flex items-center gap-3 mb-5 justify-center lg:justify-start">
-                  <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '0.8rem', color: 'rgba(201,168,76,0.5)', letterSpacing: '0.15em' }}>
-                    {String(active + 1).padStart(2, '0')} / {String(NUM).padStart(2, '0')}
-                  </span>
-                  <div style={{ flex: 1, maxWidth: 70, height: 1, background: 'rgba(201,168,76,0.2)' }}>
-                    <div style={{ height: '100%', width: `${((active + 1) / NUM) * 100}%`, background: '#C9A84C', transition: 'width 0.4s ease' }} />
-                  </div>
-                </div>
-
-                {/* Flèches nav */}
-                <div className="flex gap-3 justify-center lg:justify-start">
-                  <button
-                    onClick={() => setActive((p) => Math.max(p - 1, 0))}
-                    disabled={active === 0}
-                    style={{
-                      width: 38, height: 38,
-                      border: '1px solid rgba(201,168,76,0.3)',
-                      background: 'transparent',
-                      color: active === 0 ? 'rgba(201,168,76,0.2)' : '#C9A84C',
-                      cursor: active === 0 ? 'default' : 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'all 0.3s', fontSize: '14px',
-                    }}
-                  >←</button>
-                  <button
-                    onClick={() => setActive((p) => Math.min(p + 1, PROGRAM.length - 1))}
-                    disabled={active === PROGRAM.length - 1}
-                    style={{
-                      width: 38, height: 38,
-                      border: '1px solid rgba(201,168,76,0.3)',
-                      background: active < PROGRAM.length - 1 ? '#C9A84C' : 'transparent',
-                      color: active < PROGRAM.length - 1 ? '#1A1A1A' : 'rgba(201,168,76,0.2)',
-                      cursor: active === PROGRAM.length - 1 ? 'default' : 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'all 0.3s', fontSize: '14px',
-                    }}
-                  >→</button>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* CENTRE — La Roue */}
-          <div className="relative flex-shrink-0 order-1 lg:order-2">
+          {/* CENTRE — La Roue (background) */}
+          <div className="absolute inset-0 flex items-center justify-center z-0">
             <svg
               width={SVG_SIZE}
               height={SVG_SIZE}
               viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
-              style={{ overflow: 'visible', maxWidth: '92vw', maxHeight: '92vw' }}
+              style={{ overflow: 'visible', maxWidth: '100%', maxHeight: '100%', opacity: 0.7 }}
             >
               {/* Ticks décoratifs — fixes */}
               <WheelTicks cx={CENTER_X} cy={CENTER_Y} outerR={WHEEL_RADIUS} count={60} />
@@ -341,7 +255,7 @@ export default function ProgramWheel() {
                   )
                 })}
 
-                {/* Labels sur segments */}
+                {/* Labels sur segments — PLUS GRANDS */}
                 {PROGRAM.map((step, i) => {
                   const pos = getLabelPos(i, NUM, WHEEL_RADIUS, CENTER_X, CENTER_Y)
                   const isActive = i === active
@@ -355,20 +269,20 @@ export default function ProgramWheel() {
                       transform={`rotate(${deg}, ${pos.x}, ${pos.y})`}
                     >
                       <text
-                        x={pos.x} y={pos.y - 6}
+                        x={pos.x} y={pos.y - 8}
                         textAnchor="middle"
                         dominantBaseline="middle"
                         fill={isActive ? '#C9A84C' : 'rgba(201,168,76,0.5)'}
-                        style={{ fontFamily: 'Jost, sans-serif', fontSize: '9px', fontWeight: isActive ? 600 : 400, letterSpacing: '0.04em' }}
+                        style={{ fontFamily: 'Jost, sans-serif', fontSize: '13px', fontWeight: isActive ? 700 : 500, letterSpacing: '0.08em' }}
                       >
                         {step.time}
                       </text>
                       <text
-                        x={pos.x} y={pos.y + 8}
+                        x={pos.x} y={pos.y + 10}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fill={isActive ? 'rgba(26,26,26,0.7)' : 'rgba(26,26,26,0.3)'}
-                        style={{ fontFamily: 'Jost, sans-serif', fontSize: '7px', letterSpacing: '0.03em' }}
+                        fill={isActive ? 'rgba(26,26,26,0.8)' : 'rgba(26,26,26,0.4)'}
+                        style={{ fontFamily: 'Jost, sans-serif', fontSize: '10px', letterSpacing: '0.05em', fontWeight: 500 }}
                       >
                         {step.title?.split(' ').slice(0, 2).join(' ')}
                       </text>
@@ -391,18 +305,18 @@ export default function ProgramWheel() {
               {/* Contenu central — icône + numéro */}
               <AnimatePresence mode="wait">
                 <motion.g key={active} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.3 }}>
-                  <text x={CENTER_X} y={CENTER_Y - 14} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '26px' }}>
+                  <text x={CENTER_X} y={CENTER_Y - 14} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '32px' }}>
                     {activeStep.icon}
                   </text>
-                  <text x={CENTER_X} y={CENTER_Y + 14} textAnchor="middle" fill="rgba(201,168,76,0.6)" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '10px', letterSpacing: '0.2em' }}>
+                  <text x={CENTER_X} y={CENTER_Y + 18} textAnchor="middle" fill="rgba(201,168,76,0.6)" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '11px', letterSpacing: '0.3em', fontWeight: 600 }}>
                     {String(active + 1).padStart(2, '0')}/{String(NUM).padStart(2, '0')}
                   </text>
                 </motion.g>
               </AnimatePresence>
 
               {/* Point central */}
-              <circle cx={CENTER_X} cy={CENTER_Y} r="4" fill="#C9A84C" />
-              <circle cx={CENTER_X} cy={CENTER_Y} r="8" fill="none" stroke="rgba(201,168,76,0.3)" strokeWidth="1" />
+              <circle cx={CENTER_X} cy={CENTER_Y} r="5" fill="#C9A84C" />
+              <circle cx={CENTER_X} cy={CENTER_Y} r="10" fill="none" stroke="rgba(201,168,76,0.3)" strokeWidth="1" />
             </svg>
 
             {/* Anneau tournant décoratif */}
@@ -411,105 +325,182 @@ export default function ProgramWheel() {
               transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
               className="absolute pointer-events-none"
               style={{
-                top: '50%', left: '50%',
                 width: (WHEEL_RADIUS + 36) * 2,
                 height: (WHEEL_RADIUS + 36) * 2,
-                marginTop: -(WHEEL_RADIUS + 36),
-                marginLeft: -(WHEEL_RADIUS + 36),
                 borderRadius: '50%',
                 border: '1px dashed rgba(201,168,76,0.2)',
               }}
             />
-
-            {/* Hint scroll — visible uniquement si pas au début/fin */}
-            {active < PROGRAM.length - 1 && (
-              <motion.p
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-                className="text-center mt-4"
-                style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.25em', color: 'rgba(201,168,76,0.4)', textTransform: 'uppercase' }}
-              >
-                ↓ Scroll pour avancer
-              </motion.p>
-            )}
           </div>
 
-          {/* DROITE — Timeline verticale */}
-          <div className="hidden lg:flex flex-col items-start justify-center flex-1 max-w-xs order-3 gap-0">
-            {/* Numéro romain décoratif */}
-            <div style={{
-              fontFamily: 'Cormorant Garamond, serif',
-              fontSize: 'clamp(4rem, 6vw, 7rem)',
-              fontWeight: 300,
-              color: 'rgba(201,168,76,0.07)',
-              lineHeight: 1,
-              userSelect: 'none',
-              marginBottom: '24px',
-              alignSelf: 'center',
-            }}>
-              {['I','II','III','IV','V','VI','VII','VIII','IX','X'][active] || (active + 1)}
+          {/* INFOS — Superposées à la roue (z-10) */}
+          <div className="absolute inset-0 flex items-center justify-between px-8 z-10 pointer-events-none">
+            {/* Gauche */}
+            <div className="w-full lg:w-1/3 max-w-xs pointer-events-auto">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active}
+                  initial={{ opacity: 0, x: -24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 24 }}
+                  transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                  className="text-left"
+                >
+                  {/* Heure grande */}
+                  <div className="mb-3">
+                    <span style={{
+                      fontFamily: 'Cormorant Garamond, serif',
+                      fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+                      fontWeight: 300,
+                      color: 'rgba(201,168,76,0.25)',
+                      lineHeight: 1,
+                    }}>
+                      {activeStep.time}
+                    </span>
+                  </div>
+
+                  {/* Titre et sous-titre PLUS GRANDS */}
+                  <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 400, lineHeight: 1.2, marginBottom: '6px', color: '#1A1A1A' }}>
+                    {activeStep.title}
+                  </h3>
+                  <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: 'clamp(0.95rem, 2vw, 1.2rem)', color: '#C9A84C', marginBottom: '16px' }}>
+                    {activeStep.subtitle}
+                  </p>
+
+                  {/* Description */}
+                  <p style={{ fontFamily: 'Jost, sans-serif', fontWeight: 300, fontSize: 'clamp(12px, 1.5vw, 14px)', lineHeight: 1.8, color: 'rgba(26,26,26,0.6)', marginBottom: '20px' }}>
+                    {activeStep.description}
+                  </p>
+
+                  {/* Dots navigation */}
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    {PROGRAM.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActive(i)}
+                        style={{
+                          width: i === active ? 28 : 8,
+                          height: 3,
+                          background: i === active ? '#C9A84C' : 'rgba(201,168,76,0.25)',
+                          transition: 'all 0.4s ease',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 0,
+                          flexShrink: 0,
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Flèches nav */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setActive((p) => Math.max(p - 1, 0))}
+                      disabled={active === 0}
+                      style={{
+                        width: 40, height: 40,
+                        border: '1px solid rgba(201,168,76,0.3)',
+                        background: 'transparent',
+                        color: active === 0 ? 'rgba(201,168,76,0.2)' : '#C9A84C',
+                        cursor: active === 0 ? 'default' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.3s', fontSize: '16px',
+                      }}
+                    >←</button>
+                    <button
+                      onClick={() => setActive((p) => Math.min(p + 1, PROGRAM.length - 1))}
+                      disabled={active === PROGRAM.length - 1}
+                      style={{
+                        width: 40, height: 40,
+                        border: '1px solid rgba(201,168,76,0.3)',
+                        background: active < PROGRAM.length - 1 ? '#C9A84C' : 'transparent',
+                        color: active < PROGRAM.length - 1 ? '#1A1A1A' : 'rgba(201,168,76,0.2)',
+                        cursor: active === PROGRAM.length - 1 ? 'default' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.3s', fontSize: '16px',
+                      }}
+                    >→</button>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Liste timeline */}
-            {PROGRAM.map((step, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3"
-                style={{ cursor: 'pointer', width: '100%' }}
-                onClick={() => setActive(i)}
-              >
-                {/* Trait + point */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                  <div style={{
-                    width: i === active ? 10 : 6,
-                    height: i === active ? 10 : 6,
-                    borderRadius: '50%',
-                    background: i === active ? '#C9A84C' : 'rgba(201,168,76,0.22)',
-                    border: i === active ? '2px solid rgba(201,168,76,0.35)' : 'none',
-                    boxSizing: 'content-box',
-                    transition: 'all 0.3s',
-                    marginTop: 3,
-                  }} />
-                  {i < PROGRAM.length - 1 && (
-                    <div style={{
-                      width: 1,
-                      height: 32,
-                      background: i < active
-                        ? 'linear-gradient(to bottom, #C9A84C, rgba(201,168,76,0.25))'
-                        : 'rgba(201,168,76,0.12)',
-                      transition: 'all 0.3s',
-                    }} />
-                  )}
-                </div>
-
-                {/* Texte */}
-                <div style={{ paddingBottom: i < PROGRAM.length - 1 ? 20 : 0 }}>
-                  <p style={{
-                    fontFamily: 'Jost, sans-serif',
-                    fontSize: '9px',
-                    letterSpacing: '0.15em',
-                    textTransform: 'uppercase',
-                    color: i === active ? '#C9A84C' : 'rgba(201,168,76,0.35)',
-                    fontWeight: i === active ? 500 : 300,
-                    transition: 'color 0.3s',
-                    lineHeight: 1,
-                    marginBottom: '3px',
-                  }}>
-                    {step.time}
-                  </p>
-                  <p style={{
-                    fontFamily: 'Cormorant Garamond, serif',
-                    fontSize: '15px',
-                    color: i === active ? 'rgba(26,26,26,0.85)' : 'rgba(26,26,26,0.32)',
-                    transition: 'color 0.3s',
-                    lineHeight: 1.3,
-                  }}>
-                    {step.title}
-                  </p>
-                </div>
+            {/* Droite — Timeline verticale */}
+            <div className="hidden lg:flex flex-col items-start justify-center w-1/3 max-w-xs gap-0">
+              {/* Numéro romain décoratif */}
+              <div style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 'clamp(3rem, 6vw, 5rem)',
+                fontWeight: 300,
+                color: 'rgba(201,168,76,0.1)',
+                lineHeight: 1,
+                userSelect: 'none',
+                marginBottom: '20px',
+              }}>
+                {['I','II','III','IV','V','VI','VII','VIII','IX','X'][active] || (active + 1)}
               </div>
-            ))}
-          </div>
 
+              {/* Liste timeline — raccourcie pour laisser space */}
+              {PROGRAM.slice(active, Math.min(active + 4, PROGRAM.length)).map((step, i) => {
+                const idx = active + i
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-3 cursor-pointer"
+                    onClick={() => setActive(idx)}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{
+                        width: idx === active ? 10 : 6,
+                        height: idx === active ? 10 : 6,
+                        borderRadius: '50%',
+                        background: idx === active ? '#C9A84C' : 'rgba(201,168,76,0.22)',
+                        border: idx === active ? '2px solid rgba(201,168,76,0.35)' : 'none',
+                        boxSizing: 'content-box',
+                        transition: 'all 0.3s',
+                        marginTop: 3,
+                      }} />
+                      {idx < PROGRAM.length - 1 && (
+                        <div style={{
+                          width: 1,
+                          height: 28,
+                          background: idx < active
+                            ? 'linear-gradient(to bottom, #C9A84C, rgba(201,168,76,0.25))'
+                            : 'rgba(201,168,76,0.12)',
+                          transition: 'all 0.3s',
+                        }} />
+                      )}
+                    </div>
+
+                    <div style={{ paddingBottom: idx < PROGRAM.length - 1 ? 16 : 0 }}>
+                      <p style={{
+                        fontFamily: 'Jost, sans-serif',
+                        fontSize: '8px',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        color: idx === active ? '#C9A84C' : 'rgba(201,168,76,0.35)',
+                        fontWeight: idx === active ? 600 : 300,
+                        transition: 'color 0.3s',
+                        lineHeight: 1,
+                        marginBottom: '2px',
+                      }}>
+                        {step.time}
+                      </p>
+                      <p style={{
+                        fontFamily: 'Cormorant Garamond, serif',
+                        fontSize: '13px',
+                        color: idx === active ? 'rgba(26,26,26,0.85)' : 'rgba(26,26,26,0.32)',
+                        transition: 'color 0.3s',
+                        lineHeight: 1.3,
+                      }}>
+                        {step.title}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </section>
