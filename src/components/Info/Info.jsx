@@ -25,10 +25,10 @@ export default function Info() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        // Récupérer le menu et dress code
+        // Récupérer le menu et dress code (routes publiques)
         const [menuRes, dressRes] = await Promise.all([
-          axios.get(`${API}/api/admin/cms/menu`).catch(() => ({ data: [] })),
-          axios.get(`${API}/api/admin/cms/settings`).catch(() => ({ data: { dresscode_rules: DRESSCODE_DEFAULT } })),
+          axios.get(`${API}/api/cms/menu`).catch(() => ({ data: [] })),
+          axios.get(`${API}/api/cms/settings`).catch(() => ({ data: {} })),
         ])
 
         // Transformer menu
@@ -47,10 +47,25 @@ export default function Info() {
         setMenu(menuData)
 
         // Transformer dress code depuis les settings
-        if (dressRes.data && dressRes.data.dresscode_rules) {
-          setDresscode(JSON.parse(typeof dressRes.data.dresscode_rules === 'string' 
-            ? dressRes.data.dresscode_rules 
-            : JSON.stringify(dressRes.data.dresscode_rules)))
+        if (dressRes.data) {
+          // Les settings sont groupés par group_name (event, contact, payment, social, other)
+          // Chercher dresscode_rules dans n'importe quel groupe
+          let dresscodeData = null
+          for (const group of Object.values(dressRes.data)) {
+            if (Array.isArray(group)) {
+              const found = group.find(s => s.key === 'dresscode_rules')
+              if (found) {
+                dresscodeData = found.value
+                break
+              }
+            }
+          }
+          
+          if (dresscodeData) {
+            setDresscode(JSON.parse(typeof dresscodeData === 'string' 
+              ? dresscodeData 
+              : JSON.stringify(dresscodeData)))
+          }
         }
       } catch (err) {
         console.error('Erreur chargement données:', err)

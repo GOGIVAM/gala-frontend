@@ -32,14 +32,36 @@ function useCountdown(targetDateString) {
 function CountdownUnit({ value, label }) {
   const display = String(value ?? 0).padStart(2, '0')
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+      {/* Chiffre principal */}
       <span style={{
         fontFamily: 'Cormorant Garamond, serif',
         fontSize: 'clamp(3.5rem, 8vw, 8rem)',
         fontWeight: 300,
         color: '#1A1A1A',
         lineHeight: 1,
+        position: 'relative',
+        zIndex: 1,
       }}>
+        {display}
+      </span>
+      {/* Double écho doré — décalé derrière */}
+      <span
+        aria-hidden="true"
+        style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: 'clamp(3.5rem, 8vw, 8rem)',
+          fontWeight: 300,
+          color: 'rgba(201,168,76,0.13)',
+          lineHeight: 1,
+          position: 'absolute',
+          top: '6px',
+          left: '4px',
+          zIndex: 0,
+          userSelect: 'none',
+          pointerEvents: 'none',
+        }}
+      >
         {display}
       </span>
       <span style={{
@@ -48,7 +70,9 @@ function CountdownUnit({ value, label }) {
         letterSpacing: '0.3em',
         textTransform: 'uppercase',
         color: '#C9A84C',
-        marginTop: '10px',
+        marginTop: '12px',
+        position: 'relative',
+        zIndex: 1,
       }}>
         {label}
       </span>
