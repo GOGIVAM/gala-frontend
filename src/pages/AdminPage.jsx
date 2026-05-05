@@ -31,6 +31,13 @@ export default function AdminPage() {
   const [partialForm, setPartialForm] = useState({ amount: '', transactionRef: '', notes: '' })
   const [manualPaymentForm, setManualPaymentForm] = useState({ participantId: '', transactionRef: '', amount: '', notes: '' })
   const [showPartialModal, setShowPartialModal] = useState(false)
+  const [editingParticipant, setEditingParticipant] = useState(null)
+  const [editParticipantForm, setEditParticipantForm] = useState({})
+  
+  // Dropdown data
+  const [filieres, setFilieres] = useState([])
+  const STATUTS = ['etudiant', 'personnel', 'invite', 'partenaire']
+  const COURSES = ['Entrée', 'Plat Principal', 'Dessert', 'Boissons']
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
 
@@ -39,8 +46,18 @@ export default function AdminPage() {
       fetchStats()
       fetchParticipants()
       fetchCMS()
+      fetchFilieres()
     }
   }, [token])
+
+  const fetchFilieres = async () => {
+    try {
+      const res = await axios.get(`${API}/api/filieres`, authHeaders)
+      setFilieres(res.data)
+    } catch (err) {
+      console.error('Filieres fetch error:', err)
+    }
+  }
 
   const fetchCMS = async () => {
     try {
@@ -228,6 +245,25 @@ export default function AdminPage() {
     }
   }
 
+  // ── Edit Participant ──
+  const handleEditParticipantOpen = (p) => {
+    setEditingParticipant(p.id)
+    setEditParticipantForm({ nom: p.nom, prenom: p.prenom, telephone: p.telephone, filiere: p.filiere, statut: p.statut })
+  }
+
+  const handleEditParticipantSave = async () => {
+    if (!editingParticipant) return
+    try {
+      await axios.patch(`${API}/api/admin/participants/${editingParticipant}`, editParticipantForm, authHeaders)
+      toast.success('Participant mis à jour !')
+      setEditingParticipant(null)
+      setEditParticipantForm({})
+      fetchParticipants()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur modification')
+    }
+  }
+
   // ── Login Screen ─────────────────────────────────────────
   if (!token) {
     return (
@@ -398,8 +434,6 @@ export default function AdminPage() {
                     { key: 'prenom', label: 'Prénom', type: 'text', required: true },
                     { key: 'email', label: 'Email', type: 'email', required: true },
                     { key: 'telephone', label: 'Téléphone', type: 'text', required: true },
-                    { key: 'filiere', label: 'Filière', type: 'text', required: true },
-                    { key: 'statut', label: 'Statut', type: 'text', required: false, placeholder: 'etudiant' },
                   ].map(field => (
                     <input
                       key={field.key}
@@ -411,6 +445,29 @@ export default function AdminPage() {
                       style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
                     />
                   ))}
+                  {/* Filière dropdown */}
+                  <select
+                    value={newItem.filiere || ''}
+                    onChange={(e) => setNewItem({...newItem, filiere: e.target.value})}
+                    required
+                    style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                  >
+                    <option value="">Sélectionner filière</option>
+                    {filieres.map(f => (
+                      <option key={f.id} value={f.name}>{f.name}</option>
+                    ))}
+                  </select>
+                  {/* Statut dropdown */}
+                  <select
+                    value={newItem.statut || ''}
+                    onChange={(e) => setNewItem({...newItem, statut: e.target.value})}
+                    style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                  >
+                    <option value="">Sélectionner statut</option>
+                    {STATUTS.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                   <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
                     <button type="submit" style={{ background: '#4CAF50', color: 'white', border: 'none', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}>
                       Créer
@@ -506,6 +563,12 @@ export default function AdminPage() {
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => handleEditParticipantOpen(p)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: '1px solid rgba(25,118,210,0.4)', color: '#1976D2', padding: '4px 8px', fontFamily: 'Jost', fontSize: '8px', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                            >
+                              <Edit2 size={9} /> Éditer
+                            </button>
                             {p.payment_status === 'manual_pending' && (
                               <button
                                 onClick={() => validatePayment(p.id)}
@@ -711,7 +774,16 @@ export default function AdminPage() {
                       Ajouter un plat
                     </h4>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                      <input type="text" placeholder="Cours (Entrée, Plat, Dessert...)" value={newItem.course || ''} onChange={e => setNewItem({...newItem, course: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
+                      <select 
+                        value={newItem.course || ''} 
+                        onChange={e => setNewItem({...newItem, course: e.target.value})} 
+                        style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                      >
+                        <option value="">Sélectionner cours</option>
+                        {COURSES.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
                       <input type="text" placeholder="Nom du plat" value={newItem.item_name || ''} onChange={e => setNewItem({...newItem, item_name: e.target.value})} style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }} />
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
@@ -876,6 +948,92 @@ export default function AdminPage() {
                 )}
               </div>
             )}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal — Éditer participant */}
+      {editingParticipant && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            style={{ background: '#1A1A1A', border: '1px solid rgba(201,168,76,0.2)', padding: '32px', maxWidth: '500px', borderRadius: '4px' }}
+          >
+            <h3 style={{ fontFamily: 'Jost', fontSize: '12px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '20px' }}>
+              Éditer participant
+            </h3>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleEditParticipantSave() }} style={{ display: 'grid', gap: '16px' }}>
+              {[
+                { key: 'prenom', label: 'Prénom', type: 'text' },
+                { key: 'nom', label: 'Nom', type: 'text' },
+                { key: 'telephone', label: 'Téléphone', type: 'text' },
+              ].map(field => (
+                <div key={field.key}>
+                  <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    {field.label}
+                  </label>
+                  <input
+                    type={field.type}
+                    value={editParticipantForm[field.key] || ''}
+                    onChange={(e) => setEditParticipantForm({...editParticipantForm, [field.key]: e.target.value})}
+                    style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                  />
+                </div>
+              ))}
+              
+              {/* Filière dropdown */}
+              <div>
+                <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  Filière
+                </label>
+                <select
+                  value={editParticipantForm.filiere || ''}
+                  onChange={(e) => setEditParticipantForm({...editParticipantForm, filiere: e.target.value})}
+                  style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                >
+                  <option value="">Sélectionner filière</option>
+                  {filieres.map(f => (
+                    <option key={f.id} value={f.name}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Statut dropdown */}
+              <div>
+                <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  Statut
+                </label>
+                <select
+                  value={editParticipantForm.statut || ''}
+                  onChange={(e) => setEditParticipantForm({...editParticipantForm, statut: e.target.value})}
+                  style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                >
+                  <option value="">Sélectionner statut</option>
+                  {STATUTS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button
+                  type="submit"
+                  style={{ flex: 1, background: '#4CAF50', color: 'white', border: 'none', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}
+                >
+                  Enregistrer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditingParticipant(null); setEditParticipantForm({}) }}
+                  style={{ flex: 1, background: 'transparent', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C', padding: '10px 16px', fontFamily: 'Jost', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
           </motion.div>
         </div>
       )}
