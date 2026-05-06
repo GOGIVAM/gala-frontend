@@ -249,7 +249,7 @@ export default function AdminPage() {
   // ── Edit Participant ──
   const handleEditParticipantOpen = (p) => {
     setEditingParticipant(p.id)
-    setEditParticipantForm({ nom: p.nom, prenom: p.prenom, telephone: p.telephone, filiere: p.filiere, statut: p.statut })
+    setEditParticipantForm({ nom: p.nom, prenom: p.prenom, telephone: p.telephone, filiere: p.filiere, statut: p.statut, paymentStatus: p.payment_status })
   }
 
   const handleEditParticipantSave = async () => {
@@ -1023,8 +1023,25 @@ export default function AdminPage() {
                   onChange={(e) => setEditParticipantForm({...editParticipantForm, statut: e.target.value})}
                   style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
                 >
-                  <option value="">Sélectionner statut</option>
+                  <option value="">Selectionner statut</option>
                   {STATUTS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Statut de paiement dropdown */}
+              <div>
+                <label style={{ display: 'block', fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  Statut Paiement
+                </label>
+                <select
+                  value={editParticipantForm.paymentStatus || ''}
+                  onChange={(e) => setEditParticipantForm({...editParticipantForm, paymentStatus: e.target.value})}
+                  style={{ width: '100%', background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                >
+                  <option value="">Selectionner statut paiement</option>
+                  {PAYMENT_STATUTS.map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
