@@ -37,6 +37,7 @@ export default function AdminPage() {
   // Dropdown data
   const [filieres, setFilieres] = useState([])
   const STATUTS = ['etudiant', 'personnel', 'invite', 'partenaire']
+  const PAYMENT_STATUTS = ['pending', 'paid', 'manual_pending', 'partial', 'failed']
   const COURSES = ['Entrée', 'Plat Principal', 'Dessert', 'Boissons']
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
@@ -465,6 +466,17 @@ export default function AdminPage() {
                   >
                     <option value="">Sélectionner statut</option>
                     {STATUTS.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {/* Statut de paiement dropdown */}
+                  <select
+                    value={newItem.paymentStatus || ''}
+                    onChange={(e) => setNewItem({...newItem, paymentStatus: e.target.value})}
+                    style={{ background: '#0F0F0F', border: '1px solid rgba(201,168,76,0.2)', color: '#FAF8F3', padding: '10px', fontFamily: 'Jost', fontSize: '11px' }}
+                  >
+                    <option value="">Sélectionner statut paiement</option>
+                    {PAYMENT_STATUTS.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
