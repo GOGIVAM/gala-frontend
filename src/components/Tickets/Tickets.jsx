@@ -18,6 +18,7 @@ export default function Tickets() {
   const [payMethod, setPayMethod] = useState('notchpay') // 'om' | 'momo' | 'notchpay' | 'manual'
   const [paymentType, setPaymentType] = useState('full') // 'full' | 'partial'
   const [partialAmount, setPartialAmount] = useState('')
+  const [screenshots, setScreenshots] = useState([])
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm()
   const phone = watch('telephone')
@@ -63,6 +64,27 @@ export default function Tickets() {
   const onPayment = async () => {
     setLoading(true)
     try {
+      // Cas du paiement manuel avec upload de captures
+      if (payMethod === 'manual') {
+        const formData = new FormData()
+        formData.append('ticketId', ticketData.ticketId)
+        formData.append('transactionRef', document.getElementById('transactionRef')?.value || '')
+        
+        // Ajouter les captures d'écran
+        screenshots.forEach((file, index) => {
+          formData.append(`screenshots`, file)
+        })
+
+        const response = await axios.post(`${API}/api/tickets/manual-payment`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        
+        toast.success('Déclaration enregistrée. Validation sous 24h.')
+        setStep('success')
+        return
+      }
+
+      // Paiements en ligne (notchpay, om, momo)
       const payload = {
         ticketId: ticketData.ticketId,
         method: payMethod,
@@ -110,17 +132,13 @@ export default function Tickets() {
     }
   }
 
-  const onManualPayment = async () => {
-    setLoading(true)
-    try {
-      await axios.post(`${API}/api/tickets/manual-payment`, { ticketId: ticketData.ticketId })
-      toast.success('Déclaration enregistrée. Validation sous 24h.')
-      setStep('success')
-    } catch {
-      toast.error('Erreur. Contactez le support.')
-    } finally {
-      setLoading(false)
-    }
+  const handleScreenshotUpload = (e) => {
+    const files = Array.from(e.target.files || [])
+    setScreenshots([...screenshots, ...files])
+  }
+
+  const removeScreenshot = (index) => {
+    setScreenshots(screenshots.filter((_, i) => i !== index))
   }
 
   return (
@@ -496,27 +514,105 @@ export default function Tickets() {
 
                   {/* Transaction Reference Input for Manual */}
                   {payMethod === 'manual' && (
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
-                        Référence de transaction (optionnel)
-                      </label>
-                      <input
-                        id="transactionRef"
-                        type="text"
-                        placeholder="Ex: OM-123456789 ou référence SMS"
-                        style={{
-                          display: 'block', width: '100%',
-                          background: 'transparent',
-                          borderBottom: '1px solid rgba(250,248,243,0.15)',
-                          color: '#FAF8F3',
-                          padding: '12px 0',
-                          fontFamily: 'Jost, sans-serif',
-                          fontSize: '14px',
-                          fontWeight: 300,
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
+                    <>
+                      <div style={{ marginBottom: '20px' }}>
+                        <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                          Référence de transaction (optionnel)
+                        </label>
+                        <input
+                          id="transactionRef"
+                          type="text"
+                          placeholder="Ex: OM-123456789 ou référence SMS"
+                          style={{
+                            display: 'block', width: '100%',
+                            background: 'transparent',
+                            borderBottom: '1px solid rgba(250,248,243,0.15)',
+                            color: '#FAF8F3',
+                            padding: '12px 0',
+                            fontFamily: 'Jost, sans-serif',
+                            fontSize: '14px',
+                            fontWeight: 300,
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+
+                      {/* Screenshot Upload */}
+                      <div style={{ marginBottom: '20px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', padding: '16px' }}>
+                        <label style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                          Captures d'écran de paiement
+                        </label>
+                        <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.6)', marginBottom: '12px' }}>
+                          Téléchargez la preuve de paiement (capture d'écran de la confirmation de paiement)
+                        </p>
+                        
+                        <label style={{
+                          display: 'block',
+                          padding: '16px',
+                          background: 'rgba(250,248,243,0.05)',
+                          border: '2px dashed rgba(201,168,76,0.3)',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.3s',
+                          marginBottom: '12px',
+                        }} onMouseEnter={(e) => e.target.style.borderColor = '#C9A84C'} onMouseLeave={(e) => e.target.style.borderColor = 'rgba(201,168,76,0.3)'}>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleScreenshotUpload}
+                            style={{ display: 'none' }}
+                          />
+                          <div style={{ fontFamily: 'Jost', fontSize: '12px', color: '#C9A84C', fontWeight: 500 }}>
+                            + Ajouter des captures
+                          </div>
+                          <div style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(250,248,243,0.4)', marginTop: '4px' }}>
+                            JPG, PNG (max 5MB chacun)
+                          </div>
+                        </label>
+
+                        {/* Display uploaded screenshots */}
+                        {screenshots.length > 0 && (
+                          <div style={{ marginTop: '12px' }}>
+                            <p style={{ fontFamily: 'Jost', fontSize: '9px', color: 'rgba(201,168,76,0.7)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                              {screenshots.length} fichier{screenshots.length > 1 ? 's' : ''} sélectionné{screenshots.length > 1 ? 's' : ''}
+                            </p>
+                            {screenshots.map((file, index) => (
+                              <div key={index} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '8px',
+                                background: 'rgba(0,0,0,0.3)',
+                                borderRadius: '4px',
+                                marginBottom: '8px',
+                              }}>
+                                <span style={{ fontFamily: 'Jost', fontSize: '11px', color: '#FAF8F3' }}>
+                                  📷 {file.name}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeScreenshot(index)}
+                                  style={{
+                                    background: 'rgba(255,107,107,0.3)',
+                                    border: '1px solid rgba(255,107,107,0.5)',
+                                    color: '#FF6B6B',
+                                    padding: '4px 12px',
+                                    fontFamily: 'Jost',
+                                    fontSize: '9px',
+                                    cursor: 'pointer',
+                                    borderRadius: '2px',
+                                  }}
+                                >
+                                  Supprimer
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
 
                   {/* Payment Button */}
