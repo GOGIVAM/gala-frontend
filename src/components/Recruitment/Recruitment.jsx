@@ -138,7 +138,7 @@ export default function Recruitment() {
                   <label style={darkLabel}>Filière</label>
                   <select {...register('filiere', { required: true })} style={{ ...darkInput, appearance: 'none', cursor: 'pointer' }}>
                     <option value="" style={{ background: '#1A1A1A' }}>Sélectionner votre filière</option>
-                    {filieres.map(f => <option key={f} value={f} style={{ background: '#1A1A1A' }}>{f}</option>)}
+                    {filieres.map(f => <option key={typeof f === 'object' ? f.id : f} value={typeof f === 'object' ? f.name : f} style={{ background: '#1A1A1A' }}>{typeof f === 'object' ? f.name : f}</option>)}
                   </select>
                 </div>
 

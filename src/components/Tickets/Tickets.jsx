@@ -314,7 +314,7 @@ export default function Tickets() {
                     >
                       <option value="" style={{ background: '#1A1A1A' }}>Sélectionner votre filière</option>
                       {filieres.map(f => (
-                        <option key={f} value={f} style={{ background: '#1A1A1A' }}>{f}</option>
+                        <option key={typeof f === 'object' ? f.id : f} value={typeof f === 'object' ? f.name : f} style={{ background: '#1A1A1A' }}>{typeof f === 'object' ? f.name : f}</option>
                       ))}
                     </select>
                     {errors.filiere && <span style={{ color: '#E8D5A3', fontSize: '11px' }}>{errors.filiere.message}</span>}

@@ -228,7 +228,7 @@ export default function Awards() {
                   <select {...register('nomine_filiere')} style={inputStyle}>
                     <option value="" style={{ background: '#FAF8F3' }}>Sélectionner une filière</option>
                     {filieres.map(f => (
-                      <option key={f} value={f} style={{ background: '#FAF8F3' }}>{f}</option>
+                      <option key={typeof f === 'object' ? f.id : f} value={typeof f === 'object' ? f.name : f} style={{ background: '#FAF8F3' }}>{typeof f === 'object' ? f.name : f}</option>
                     ))}
                   </select>
                 </div>
