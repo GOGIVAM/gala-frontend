@@ -50,27 +50,18 @@ export default function Navbar() {
           {/* Logo */}
           <div
             onClick={() => handleNav('#hero')}
-            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            {/* SVG monogramme */}
-            <svg width="120" height="36" viewBox="0 0 120 36">
-              <text
-                x="0" y="26"
-                fontFamily="Cormorant Garamond, serif"
-                fontStyle="italic"
-                fontWeight="300"
-                fontSize="22"
-                fill="#1A1A1A"
-                letterSpacing="1"
-              >
-                Éclat &amp; Élégance
-              </text>
-              {/* Trait doré sous le texte */}
-              <line x1="0" y1="32" x2="120" y2="32" stroke="#C9A84C" strokeWidth="0.5" opacity="0.6" />
-            </svg>
-            <span style={{ fontFamily: 'Jost, sans-serif', fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#C9A84C', marginTop: '2px' }}>
-              Promo 2 · 2026
-            </span>
+            <img
+              src="/logo_gala.png"
+              alt="Éclat & Élégance"
+              style={{
+                height: scrolled ? '40px' : '48px',
+                width: 'auto',
+                transition: 'height 0.5s',
+                objectFit: 'contain',
+              }}
+            />
           </div>
 
           {/* Desktop Links */}
@@ -197,12 +188,12 @@ export default function Navbar() {
               <line x1="240" y1="0" x2="240" y2="800" stroke="rgba(201,168,76,0.04)" strokeWidth="1" />
             </svg>
 
-            {/* Monogramme SVG centré */}
-            <svg width="60" height="60" viewBox="0 0 60 60" style={{ marginBottom: '-16px' }}>
-              <polygon points="30,4 56,18 56,42 30,56 4,42 4,18" fill="none" stroke="rgba(201,168,76,0.4)" strokeWidth="0.8" />
-              <polygon points="30,12 48,22 48,38 30,48 12,38 12,22" fill="none" stroke="rgba(201,168,76,0.2)" strokeWidth="0.5" />
-              <text x="30" y="35" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="18" fontStyle="italic" fill="#C9A84C">É</text>
-            </svg>
+            {/* Logo centré */}
+            <img
+              src="/logo_gala.png"
+              alt="Éclat & Élégance"
+              style={{ height: '80px', width: 'auto', objectFit: 'contain', marginBottom: '-8px' }}
+            />
 
             {links.map((link, i) => (
               <motion.button

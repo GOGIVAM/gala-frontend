@@ -273,7 +273,7 @@ export default function Hero() {
             marginBottom: '48px',
           }}
         >
-          Samedi 21 Juin 2026 · 19h00 · Black Tie — Noir & Or
+          Samedi 27 Juin 2026 · 19h00 · Black Tie — Noir & Or
         </motion.p>
 
         {/* Countdown */}

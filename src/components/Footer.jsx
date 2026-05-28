@@ -11,10 +11,19 @@ export default function Footer() {
         <div className="grid md:grid-cols-3 gap-12 mb-12">
           {/* Brand */}
           <div>
-            <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.8rem', fontStyle: 'italic', fontWeight: 300, color: '#FAF8F3', marginBottom: '8px' }}>
-              Éclat & Élégance
-            </h3>
-            <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '16px' }}>
+            <div style={{
+              display: 'inline-block',
+              marginBottom: '16px',
+              border: '1px solid rgba(201,168,76,0.25)',
+              padding: '6px',
+            }}>
+              <img
+                src="/logo_gala.png"
+                alt="Éclat & Élégance"
+                style={{ height: '56px', width: 'auto', objectFit: 'contain', display: 'block' }}
+              />
+            </div>
+            <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
               Gala Promotion 2 · 2026
             </p>
             <p style={{ fontFamily: 'Jost', fontSize: '12px', fontWeight: 300, color: 'rgba(250,248,243,0.35)', lineHeight: 1.7 }}>
