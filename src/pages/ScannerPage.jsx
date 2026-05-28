@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5001'
 
 export default function ScannerPage() {
   const [token, setToken] = useState(localStorage.getItem('admin_token'))

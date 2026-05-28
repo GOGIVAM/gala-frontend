@@ -4,7 +4,7 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { LogOut, Download, Check, Search, Users, TrendingUp, DollarSign, UserCheck, Settings, Plus, Trash2, Edit2 } from 'lucide-react'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5001'
 
 export default function AdminPage() {
   const [token, setToken] = useState(localStorage.getItem('admin_token'))
@@ -351,7 +351,7 @@ export default function AdminPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
               {[
                 { label: 'Places vendues', value: S.paid, icon: Users, color: '#C9A84C', sub: `/ ${S.target} objectif` },
-                { label: 'Revenus', value: `${(S.revenue / 1000).toFixed(0)}K FCFA`, icon: DollarSign, color: '#4CAF50', sub: `${S.paid} × 10 000` },
+                { label: 'Revenus', value: `${(S.revenue / 1000).toFixed(0)}K FCFA`, icon: DollarSign, color: '#4CAF50', sub: `${S.paid} billets vendus` },
                 { label: 'En attente', value: S.manualPending, icon: TrendingUp, color: '#FF9800', sub: 'paiements manuels' },
                 { label: 'Présent(e)s', value: S.checkedIn, icon: UserCheck, color: '#2196F3', sub: 'soir J' },
               ].map((kpi) => {

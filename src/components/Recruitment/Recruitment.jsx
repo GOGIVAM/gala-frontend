@@ -3,8 +3,9 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import axios from 'axios'
+import { useSettings } from '../../hooks/useConfig.jsx'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5001'
 
 const POLES = ['Communication', 'Logistique', 'Billetterie', 'Technique', 'Décoration & Scénographie']
 
@@ -13,6 +14,8 @@ export default function Recruitment() {
   const [success, setSuccess] = useState(false)
   const [filieres, setFilieres] = useState([])
   const { register, handleSubmit, formState: { errors } } = useForm()
+  const { settings } = useSettings()
+  const whatsappUrl = settings?.whatsapp_group_url || 'https://wa.me/qr/IIPI4K7IVCNNC1'
 
   // Charger les filieres au montage
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function Recruitment() {
                   Rejoins le groupe WhatsApp du CO pour rester informé(e).
                 </p>
                 <a
-                  href="https://wa.me/qr/IIPI4K7IVCNNC1"
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

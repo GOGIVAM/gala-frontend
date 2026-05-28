@@ -1,81 +1,29 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, UtensilsCrossed, Shirt, ExternalLink } from 'lucide-react'
-import axios from 'axios'
-import { useSettings } from '../../hooks/useConfig.jsx'
+import { useSettings, useMenu } from '../../hooks/useConfig.jsx'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-
-// Fallback pour dress code si l'API ne répond pas
 const DRESSCODE_DEFAULT = [
   { rule: 'Messieurs', detail: 'Costume sombre, de préférence noir. Chemise blanche ou crème. Nœud papillon ou cravate dorée.', required: true },
   { rule: 'Mesdames', detail: 'Robe de soirée ou ensemble élégant. Couleurs : noir, blanc, champagne, or. Talons ou chaussures habillées.', required: true },
   { rule: 'Accessoires', detail: 'Bijoux en or ou doré encouragés. Pochette ou clutch de soirée.', required: false },
-  { rule: 'À éviter', detail: 'Jeans, baskets, tenues décontractées. Le comité d\'organisation se réserve le droit de refuser l\'accès.', required: false },
+  { rule: 'À éviter', detail: "Jeans, baskets, tenues décontractées. Le comité d'organisation se réserve le droit de refuser l'accès.", required: false },
 ]
 
 export default function Info() {
   const [activeTab, setActiveTab] = useState('map')
-  const [menu, setMenu] = useState([])
-  const [dresscode, setDresscode] = useState(DRESSCODE_DEFAULT)
-  const [loading, setLoading] = useState(false)
   const { settings } = useSettings()
+  const { menu: configMenu } = useMenu()
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        // Récupérer le menu et dress code (routes publiques)
-        const [menuRes, dressRes] = await Promise.all([
-          axios.get(`${API}/api/cms/menu`).catch(() => ({ data: [] })),
-          axios.get(`${API}/api/cms/settings`).catch(() => ({ data: {} })),
-        ])
+  // configMenu is already grouped: [{ course, order, items: [] }]
+  const menu = configMenu.map(m => ({ ...m, icon: '◇' }))
 
-        // Transformer menu
-        const menuData = (menuRes.data && Array.isArray(menuRes.data))
-          ? menuRes.data.reduce((acc, item) => {
-              const existing = acc.find(m => m.course === item.course)
-              if (existing) {
-                existing.items.push(item.item_name)
-              } else {
-                acc.push({ course: item.course, items: [item.item_name], icon: '◇' })
-              }
-              return acc
-            }, [])
-          : []
-        
-        setMenu(menuData)
+  // dresscode_rules stored as JSON in settings table, fallback to default
+  const dresscode = Array.isArray(settings?.dresscode_rules)
+    ? settings.dresscode_rules
+    : DRESSCODE_DEFAULT
 
-        // Transformer dress code depuis les settings
-        if (dressRes.data) {
-          // Les settings sont groupés par group_name (event, contact, payment, social, other)
-          // Chercher dresscode_rules dans n'importe quel groupe
-          let dresscodeData = null
-          for (const group of Object.values(dressRes.data)) {
-            if (Array.isArray(group)) {
-              const found = group.find(s => s.key === 'dresscode_rules')
-              if (found) {
-                dresscodeData = found.value
-                break
-              }
-            }
-          }
-          
-          if (dresscodeData) {
-            setDresscode(JSON.parse(typeof dresscodeData === 'string' 
-              ? dresscodeData 
-              : JSON.stringify(dresscodeData)))
-          }
-        }
-      } catch (err) {
-        console.error('Erreur chargement données:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchData()
-  }, [])
+  const instagramUrl = settings?.instagram_url || null
 
   const tabs = [
     { id: 'map', label: 'Lieu', icon: MapPin },
@@ -98,7 +46,7 @@ export default function Info() {
 
         {/* Tab Navigation */}
         <div className="flex items-center justify-center gap-2 mb-16">
-          {tabs.map((tab) => {
+          {tabs.map(tab => {
             const Icon = tab.icon
             return (
               <button
@@ -111,12 +59,8 @@ export default function Info() {
                   color: activeTab === tab.id ? '#FAF8F3' : 'rgba(26,26,26,0.4)',
                   border: '1px solid',
                   borderColor: activeTab === tab.id ? '#1A1A1A' : 'rgba(26,26,26,0.1)',
-                  fontFamily: 'Jost, sans-serif',
-                  fontSize: '10px',
-                  letterSpacing: '0.2em',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
+                  fontFamily: 'Jost, sans-serif', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase',
+                  cursor: 'pointer', transition: 'all 0.3s',
                 }}
               >
                 <Icon size={12} />
@@ -126,86 +70,58 @@ export default function Info() {
           })}
         </div>
 
-        {/* Tab Content */}
         <AnimatePresence mode="wait">
           {/* MAP */}
           {activeTab === 'map' && (
-            <motion.div
-              key="map"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="grid lg:grid-cols-2 gap-16 items-center"
-            >
+            <motion.div key="map" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid lg:grid-cols-2 gap-16 items-center">
               <div>
-                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2.5rem', fontWeight: 300, marginBottom: '16px' }}>
-                  Le Lieu
-                </h3>
+                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2.5rem', fontWeight: 300, marginBottom: '16px' }}>Le Lieu</h3>
                 <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C', fontSize: '1.1rem', marginBottom: '20px' }}>
                   Cadre moderne et prestigieux
                 </p>
                 <p style={{ fontFamily: 'Jost', fontWeight: 300, fontSize: '13px', color: 'rgba(26,26,26,0.6)', lineHeight: 1.8, marginBottom: '32px' }}>
-                  L'adresse exacte sera communiquée par email à tous les participants confirmés 48h avant l'événement. Le lieu a été sélectionné pour son cadre contemporain et son standing à la hauteur de l'événement.
+                  L'adresse exacte sera communiquée par email à tous les participants confirmés 48h avant l'événement.
+                  Le lieu a été sélectionné pour son cadre contemporain et son standing à la hauteur de l'événement.
                 </p>
                 <div className="flex flex-col gap-4">
                   {[
                     { label: 'Date', value: 'Samedi 30 Mai 2026' },
                     { label: 'Accueil', value: 'À partir de 19h00' },
-                    { label: 'Tenue', value: 'Black Tie — Noir & Or' },
+                    { label: 'Tenue', value: settings?.event_dresscode || 'Black Tie — Noir & Or' },
                     { label: 'Accès', value: 'Sur présentation QR Code uniquement' },
-                  ].map((item) => (
+                  ].map(item => (
                     <div key={item.label} className="flex items-start gap-4">
                       <span style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', minWidth: '80px', paddingTop: '1px' }}>
                         {item.label}
                       </span>
-                      <span style={{ fontFamily: 'Jost', fontWeight: 300, fontSize: '13px', color: '#1A1A1A' }}>
-                        {item.value}
-                      </span>
+                      <span style={{ fontFamily: 'Jost', fontWeight: 300, fontSize: '13px', color: '#1A1A1A' }}>{item.value}</span>
                     </div>
                   ))}
                 </div>
-                <button
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    marginTop: '32px',
-                    background: 'transparent',
-                    border: '1px solid rgba(201,168,76,0.3)',
-                    color: '#C9A84C',
-                    padding: '12px 24px',
-                    fontFamily: 'Jost, sans-serif',
-                    fontSize: '10px',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <ExternalLink size={12} />
-                  Suivre sur Instagram
-                </button>
+                {instagramUrl && (
+                  <a
+                    href={instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '8px',
+                      marginTop: '32px',
+                      background: 'transparent', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C',
+                      padding: '12px 24px',
+                      fontFamily: 'Jost, sans-serif', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase',
+                      cursor: 'pointer', textDecoration: 'none',
+                    }}
+                  >
+                    <ExternalLink size={12} />
+                    Suivre sur Instagram
+                  </a>
+                )}
               </div>
 
-              {/* Map placeholder (will be replaced with actual Google Maps) */}
-              <div
-                style={{
-                  aspectRatio: '4/3',
-                  background: 'rgba(201,168,76,0.05)',
-                  border: '1px solid rgba(201,168,76,0.2)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
+              <div style={{ aspectRatio: '4/3', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                 <MapPin size={32} color="rgba(201,168,76,0.4)" style={{ marginBottom: '12px' }} />
-                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: 'rgba(201,168,76,0.5)', fontSize: '1.1rem' }}>
-                  Lieu à confirmer
-                </p>
-                <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(26,26,26,0.3)', marginTop: '8px', letterSpacing: '0.1em' }}>
-                  Carte disponible après confirmation
-                </p>
-                {/* Corner decorations */}
+                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: 'rgba(201,168,76,0.5)', fontSize: '1.1rem' }}>Lieu à confirmer</p>
+                <p style={{ fontFamily: 'Jost', fontSize: '10px', color: 'rgba(26,26,26,0.3)', marginTop: '8px', letterSpacing: '0.1em' }}>Carte disponible après confirmation</p>
                 <div style={{ position: 'absolute', top: 12, left: 12, width: 20, height: 20, borderTop: '1px solid rgba(201,168,76,0.3)', borderLeft: '1px solid rgba(201,168,76,0.3)' }} />
                 <div style={{ position: 'absolute', bottom: 12, right: 12, width: 20, height: 20, borderBottom: '1px solid rgba(201,168,76,0.3)', borderRight: '1px solid rgba(201,168,76,0.3)' }} />
               </div>
@@ -214,59 +130,42 @@ export default function Info() {
 
           {/* MENU */}
           {activeTab === 'menu' && (
-            <motion.div
-              key="menu"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
+            <motion.div key="menu" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <div className="text-center mb-12">
-                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', fontWeight: 300, marginBottom: '8px' }}>
-                  Menu de la Soirée
-                </h3>
-                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C' }}>
-                  Dîner gastronomique · Service à table
+                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', fontWeight: 300, marginBottom: '8px' }}>Menu de la Soirée</h3>
+                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C' }}>Dîner gastronomique · Service à table</p>
+              </div>
+              {menu.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {menu.map((course, i) => (
+                    <motion.div
+                      key={course.course}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      style={{ background: 'var(--warm-white)', border: '1px solid rgba(201,168,76,0.2)', padding: '32px 24px', position: 'relative' }}
+                    >
+                      <div style={{ position: 'absolute', top: 16, right: 16, fontSize: '1.2rem', color: 'rgba(201,168,76,0.4)' }}>
+                        {course.icon || '◇'}
+                      </div>
+                      <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
+                        {course.course}
+                      </p>
+                      <ul className="space-y-3">
+                        {course.items.map(item => (
+                          <li key={item} style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1rem', fontWeight: 400, lineHeight: 1.4, color: '#1A1A1A' }}>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ textAlign: 'center', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: 'rgba(26,26,26,0.4)', fontSize: '1.1rem' }}>
+                  Menu en cours de finalisation — revenez bientôt.
                 </p>
-              </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {(menu && menu.length > 0 ? menu : []).map((course, i) => (
-                  <motion.div
-                    key={course.course}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    style={{
-                      background: 'var(--warm-white)',
-                      border: '1px solid rgba(201,168,76,0.2)',
-                      padding: '32px 24px',
-                      position: 'relative',
-                    }}
-                  >
-                    <div style={{ position: 'absolute', top: 16, right: 16, fontSize: '1.2rem', color: 'rgba(201,168,76,0.4)' }}>
-                      {course.icon}
-                    </div>
-                    <p style={{ fontFamily: 'Jost', fontSize: '9px', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase', marginBottom: '12px' }}>
-                      {course.course}
-                    </p>
-                    <ul className="space-y-3">
-                      {course.items.map((item) => (
-                        <li
-                          key={item}
-                          style={{
-                            fontFamily: 'Cormorant Garamond, serif',
-                            fontSize: '1rem',
-                            fontWeight: 400,
-                            lineHeight: 1.4,
-                            color: '#1A1A1A',
-                          }}
-                        >
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </motion.div>
-                ))}
-              </div>
+              )}
               <p style={{ textAlign: 'center', fontFamily: 'Jost', fontSize: '11px', color: 'rgba(26,26,26,0.35)', marginTop: '24px', fontStyle: 'italic' }}>
                 Menu susceptible d'évoluer · Régimes alimentaires spécifiques sur demande à l'inscription
               </p>
@@ -275,21 +174,11 @@ export default function Info() {
 
           {/* DRESS CODE */}
           {activeTab === 'dresscode' && (
-            <motion.div
-              key="dresscode"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
+            <motion.div key="dresscode" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <div className="text-center mb-12">
-                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', fontWeight: 300, marginBottom: '8px' }}>
-                  Black Tie
-                </h3>
-                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C' }}>
-                  Noir & Or — Tenue de Rigueur
-                </p>
+                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', fontWeight: 300, marginBottom: '8px' }}>Black Tie</h3>
+                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', color: '#C9A84C' }}>Noir & Or — Tenue de Rigueur</p>
               </div>
-
               <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                 {dresscode.map((item, i) => (
                   <motion.div
@@ -300,47 +189,23 @@ export default function Info() {
                     style={{
                       background: item.required ? '#1A1A1A' : 'var(--warm-white)',
                       border: `1px solid ${item.required ? 'rgba(201,168,76,0.3)' : 'rgba(26,26,26,0.1)'}`,
-                      padding: '32px',
-                      position: 'relative',
+                      padding: '32px', position: 'relative',
                     }}
                   >
                     {item.required && (
-                      <div
-                        style={{
-                          position: 'absolute', top: 16, right: 16,
-                          fontSize: '8px', letterSpacing: '0.2em',
-                          color: '#C9A84C', fontFamily: 'Jost',
-                          textTransform: 'uppercase',
-                          border: '1px solid rgba(201,168,76,0.3)',
-                          padding: '3px 8px',
-                        }}
-                      >
+                      <div style={{ position: 'absolute', top: 16, right: 16, fontSize: '8px', letterSpacing: '0.2em', color: '#C9A84C', fontFamily: 'Jost', textTransform: 'uppercase', border: '1px solid rgba(201,168,76,0.3)', padding: '3px 8px' }}>
                         Obligatoire
                       </div>
                     )}
-                    <h4 style={{
-                      fontFamily: 'Cormorant Garamond, serif',
-                      fontSize: '1.4rem',
-                      fontWeight: 400,
-                      color: item.required ? '#FAF8F3' : '#1A1A1A',
-                      marginBottom: '12px',
-                    }}>
+                    <h4 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.4rem', fontWeight: 400, color: item.required ? '#FAF8F3' : '#1A1A1A', marginBottom: '12px' }}>
                       {item.rule}
                     </h4>
-                    <p style={{
-                      fontFamily: 'Jost',
-                      fontSize: '12px',
-                      fontWeight: 300,
-                      lineHeight: 1.7,
-                      color: item.required ? 'rgba(250,248,243,0.6)' : 'rgba(26,26,26,0.6)',
-                    }}>
+                    <p style={{ fontFamily: 'Jost', fontSize: '12px', fontWeight: 300, lineHeight: 1.7, color: item.required ? 'rgba(250,248,243,0.6)' : 'rgba(26,26,26,0.6)' }}>
                       {item.detail}
                     </p>
                   </motion.div>
                 ))}
               </div>
-
-              {/* Reference photos */}
             </motion.div>
           )}
         </AnimatePresence>

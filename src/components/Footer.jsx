@@ -1,7 +1,10 @@
-import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
+import { useSettings } from '../hooks/useConfig.jsx'
 
 export default function Footer() {
+  const { settings } = useSettings()
+  const whatsappUrl = settings?.whatsapp_group_url || null
+
   return (
     <footer style={{ background: '#0F0F0F', borderTop: '1px solid rgba(201,168,76,0.1)' }}>
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -60,23 +63,33 @@ export default function Footer() {
             <p style={{ fontFamily: 'Jost', fontSize: '12px', fontWeight: 300, color: 'rgba(250,248,243,0.4)', lineHeight: 1.7, marginBottom: '16px' }}>
               Photos, souvenirs et récapitulatif de la soirée disponibles sur le groupe WhatsApp officiel.
             </p>
-            <button
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                background: 'transparent',
-                border: '1px solid rgba(201,168,76,0.3)',
-                color: '#C9A84C',
-                padding: '10px 20px',
-                fontFamily: 'Jost, sans-serif',
-                fontSize: '10px',
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-              }}
-            >
-              <MessageCircle size={12} />
-              Rejoindre le groupe
-            </button>
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  background: 'transparent',
+                  border: '1px solid rgba(201,168,76,0.3)',
+                  color: '#C9A84C',
+                  padding: '10px 20px',
+                  fontFamily: 'Jost, sans-serif',
+                  fontSize: '10px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                }}
+              >
+                <MessageCircle size={12} />
+                Rejoindre le groupe
+              </a>
+            ) : (
+              <p style={{ fontFamily: 'Jost', fontSize: '11px', color: 'rgba(250,248,243,0.2)', fontStyle: 'italic' }}>
+                Lien bientôt disponible
+              </p>
+            )}
           </div>
         </div>
 
