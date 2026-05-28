@@ -85,7 +85,7 @@ export default function Info() {
                 </p>
                 <div className="flex flex-col gap-4">
                   {[
-                    { label: 'Date', value: 'Samedi 30 Mai 2026' },
+                    { label: 'Date', value: 'Samedi 21 Juin 2026' },
                     { label: 'Accueil', value: 'À partir de 19h00' },
                     { label: 'Tenue', value: settings?.event_dresscode || 'Black Tie — Noir & Or' },
                     { label: 'Accès', value: 'Sur présentation QR Code uniquement' },
